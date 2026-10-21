@@ -1,0 +1,34 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-yellow: #F5A623;
+  --color-brand-red: #C0392B;
+  --color-brand-yellow-light: #FDE8C0;
+  --color-brand-red-light: #FADADD;
+  --color-off-white: #FAF8F4;
+  --color-surface: #FFFFFF;
+  --color-text-primary: #1A1A1A;
+  --color-text-secondary: #5A5A5A;
+  --color-text-muted: #9A9A9A;
+  --color-border: #E8E4DC;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: #FAF8F4;
+  color: #1A1A1A;
+}
+
+/* Kannada script font support */
+.kannada-text {
+  font-family: 'Noto Sans Kannada', 'Noto Serif Kannada', system-ui, sans-serif;
+}
+
+/* Subtle flag gradient: yellow → red */
+.flag-gradient {
+  background: linear-gradient(135deg, rgba(245, 166, 35, 0.12) 0%, rgba(192, 57, 43, 0.08) 100%);
+}
+
+.flag-gradient-strong {
+  background: linear-gradient(135deg, rgba(245, 166, 35, 0.25) 0%, rgba(192, 57, 43, 0.15) 100%);
+}
