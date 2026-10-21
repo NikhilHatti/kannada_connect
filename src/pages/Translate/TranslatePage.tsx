@@ -97,7 +97,7 @@ export default function TranslatePage() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recognitionRef = useRef<any>(null);
-  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /* ── Auto-translate after user stops typing (600ms debounce) ── */
   const doTranslate = useCallback(
@@ -248,11 +248,10 @@ export default function TranslatePage() {
               {/* Voice input button */}
               <button
                 onClick={toggleVoiceInput}
-                className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all duration-200 ${
-                  isListening
+                className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all duration-200 ${isListening
                     ? 'border-[#C0392B] bg-red-50 text-[#C0392B] animate-pulse scale-110'
                     : 'border-[#E8E4DC] text-[#9A9A9A] hover:text-[#C0392B] hover:border-[#C0392B] hover:bg-red-50'
-                }`}
+                  }`}
                 title={isListening ? 'Stop listening' : 'Speak to translate'}
               >
                 {isListening ? <MicOff size={16} /> : <Mic size={16} />}
