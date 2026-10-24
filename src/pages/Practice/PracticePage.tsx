@@ -1,24 +1,9 @@
 import { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Volume2, RotateCcw, ChevronRight, MessageCircle, Sparkles } from 'lucide-react';
-
-/* ─── Speak Kannada ─── */
-function speakKannada(text: string) {
-  const synth = window.speechSynthesis;
-  synth.cancel();
-  const utt = new SpeechSynthesisUtterance(text);
-  utt.lang = 'kn-IN';
-  utt.rate = 0.85;
-  utt.pitch = 1.0;
-  const voices = synth.getVoices();
-  const best =
-    voices.find((v) => v.lang === 'kn-IN') ??
-    voices.find((v) => v.lang.startsWith('kn')) ??
-    voices.find((v) => v.name.toLowerCase().includes('kannada')) ??
-    null;
-  if (best) utt.voice = best;
-  synth.speak(utt);
-}
+import { useLanguage } from '../../context/LanguageContext';
+import type { UIStrings } from '../../types';
+import { speakKannada } from '../../utils/speech';
 
 /* ─── Conversation Data ─── */
 
@@ -315,7 +300,21 @@ interface ChatMessage {
    Component
    ══════════════════════════════════════ */
 
+/* ══════════════════════════════════════
+   Scenario Translations Mapping
+   ══════════════════════════════════════ */
+const SCENARIO_TRANSLATIONS: Record<
+  string,
+  { titleKey: keyof UIStrings; descKey: keyof UIStrings }
+> = {
+  'auto-ride': { titleKey: 'scenarioAutoTitle', descKey: 'scenarioAutoDesc' },
+  'restaurant-order': { titleKey: 'scenarioRestaurantTitle', descKey: 'scenarioRestaurantDesc' },
+  'ask-directions': { titleKey: 'scenarioDirectionsTitle', descKey: 'scenarioDirectionsDesc' },
+  'medical-visit': { titleKey: 'scenarioMedicalTitle', descKey: 'scenarioMedicalDesc' },
+};
+
 export default function PracticePage() {
+  const { t } = useLanguage();
   const [selectedScenario, setSelectedScenario] = useState<Scenario | null>(null);
   const [currentStepId, setCurrentStepId] = useState<string>('');
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
@@ -377,67 +376,100 @@ export default function PracticePage() {
     return (
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <div className="flex items-center gap-2 text-sm text-[#9A9A9A] mb-6">
-          <Link to="/" className="hover:text-[#1A1A1A]">Home</Link>
+          <Link to="/" className="hover:text-[#1A1A1A]">{t('navHome')}</Link>
           <span>/</span>
-          <span className="text-[#1A1A1A]">Practice with AI</span>
+          <span className="text-[#1A1A1A]">{t('navPractice')}</span>
         </div>
 
         <Link to="/" className="inline-flex items-center gap-1.5 text-sm text-[#5A5A5A] hover:text-[#1A1A1A] mb-8 transition-colors">
           <ArrowLeft size={15} />
-          Back to home
+          {t('backToHome')}
         </Link>
 
         {/* Header */}
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-gradient-to-r from-[#FDE8C0] to-[#FADADD] rounded-full text-xs font-semibold text-[#C0392B] uppercase tracking-wide mb-4">
             <Sparkles size={13} />
-            Interactive Practice
+            {t('practiceWithAI')}
           </div>
           <h1 className="text-3xl sm:text-4xl font-extrabold text-[#1A1A1A] mb-2">
-            Practice <span className="text-[#C0392B]">Kannada</span> Conversations
+            {t('practiceTitle')}
           </h1>
           <p className="text-[#5A5A5A] text-sm max-w-md mx-auto">
-            Choose a real-life scenario and practice speaking Kannada through interactive conversations.
+            {t('practiceSubtitle')}
           </p>
+        </div>
+
+        {/* Gamified Levels Callout Banner */}
+        <div className="max-w-2xl mx-auto mb-8 bg-gradient-to-r from-amber-500 via-orange-500 to-red-600 rounded-3xl p-5 sm:p-6 text-white shadow-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/20 text-white font-bold text-xs uppercase tracking-wider">
+              <Sparkles size={12} />
+              Gamification & Levels Active
+            </div>
+            <h2 className="text-lg sm:text-xl font-black">
+              Real-World Quests: Market, College & Auto
+            </h2>
+            <p className="text-xs text-white/90">
+              Ask shopkeepers prices, borrow college notes, take autos, and earn XP to level up!
+            </p>
+          </div>
+          <Link
+            to="/missions"
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-white text-neutral-900 font-bold text-xs sm:text-sm rounded-xl hover:bg-neutral-100 transition-colors shadow-xs flex-shrink-0"
+          >
+            Play Missions 🎮
+            <ChevronRight size={15} />
+          </Link>
         </div>
 
         {/* Scenario cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 max-w-2xl mx-auto">
-          {SCENARIOS.map((scenario) => (
-            <button
-              key={scenario.id}
-              onClick={() => startScenario(scenario)}
-              className="bg-white rounded-2xl border border-[#E8E4DC] p-6 text-left shadow-sm hover:shadow-md hover:border-[#C0392B]/30 hover:-translate-y-0.5 transition-all duration-200 group"
-            >
-              <div
-                className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl mb-4"
-                style={{ background: `${scenario.color}18` }}
+          {SCENARIOS.map((scenario) => {
+            const mapping = SCENARIO_TRANSLATIONS[scenario.id];
+            const title = mapping ? t(mapping.titleKey) : scenario.title;
+            const desc = mapping ? t(mapping.descKey) : scenario.description;
+
+            return (
+              <button
+                key={scenario.id}
+                onClick={() => startScenario(scenario)}
+                className="bg-white rounded-2xl border border-[#E8E4DC] p-6 text-left shadow-sm hover:shadow-md hover:border-[#C0392B]/30 hover:-translate-y-0.5 transition-all duration-200 group"
               >
-                {scenario.icon}
-              </div>
-              <h3 className="text-base font-bold text-[#1A1A1A] mb-1 group-hover:text-[#C0392B] transition-colors">
-                {scenario.title}
-              </h3>
-              <p className="text-xs text-[#9A9A9A] leading-relaxed mb-3">{scenario.description}</p>
-              <div className="flex items-center gap-1 text-xs font-semibold text-[#C0392B] opacity-0 group-hover:opacity-100 transition-opacity">
-                Start practicing <ChevronRight size={12} />
-              </div>
-            </button>
-          ))}
+                <div
+                  className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl mb-4"
+                  style={{ background: `${scenario.color}18` }}
+                >
+                  {scenario.icon}
+                </div>
+                <h3 className="text-base font-bold text-[#1A1A1A] mb-1 group-hover:text-[#C0392B] transition-colors">
+                  {title}
+                </h3>
+                <p className="text-xs text-[#9A9A9A] leading-relaxed mb-3">{desc}</p>
+                <div className="flex items-center gap-1 text-xs font-semibold text-[#C0392B] opacity-0 group-hover:opacity-100 transition-opacity">
+                  {t('startLearning')} <ChevronRight size={12} />
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
     );
   }
 
   /* ══ Conversation screen ══ */
+  const selectedMapping = selectedScenario ? SCENARIO_TRANSLATIONS[selectedScenario.id] : undefined;
+  const currentScenarioTitle = selectedMapping ? t(selectedMapping.titleKey) : selectedScenario.title;
+  const currentScenarioDesc = selectedMapping ? t(selectedMapping.descKey) : selectedScenario.description;
+
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <div className="flex items-center gap-2 text-sm text-[#9A9A9A] mb-6">
-        <Link to="/" className="hover:text-[#1A1A1A]">Home</Link>
+        <Link to="/" className="hover:text-[#1A1A1A]">{t('navHome')}</Link>
         <span>/</span>
-        <button onClick={handleReset} className="hover:text-[#1A1A1A]">Practice</button>
+        <button onClick={handleReset} className="hover:text-[#1A1A1A]">{t('navPractice')}</button>
         <span>/</span>
-        <span className="text-[#1A1A1A]">{selectedScenario.title}</span>
+        <span className="text-[#1A1A1A]">{currentScenarioTitle}</span>
       </div>
 
       <button
@@ -445,7 +477,7 @@ export default function PracticePage() {
         className="inline-flex items-center gap-1.5 text-sm text-[#5A5A5A] hover:text-[#1A1A1A] mb-6 transition-colors"
       >
         <ArrowLeft size={15} />
-        All scenarios
+        {t('chooseAnotherScenario')}
       </button>
 
       {/* Scenario header */}
@@ -457,8 +489,8 @@ export default function PracticePage() {
           {selectedScenario.icon}
         </div>
         <div>
-          <h2 className="text-lg font-bold text-[#1A1A1A]">{selectedScenario.title}</h2>
-          <p className="text-xs text-[#9A9A9A]">{selectedScenario.description}</p>
+          <h2 className="text-lg font-bold text-[#1A1A1A]">{currentScenarioTitle}</h2>
+          <p className="text-xs text-[#9A9A9A]">{currentScenarioDesc}</p>
         </div>
       </div>
 
@@ -487,7 +519,7 @@ export default function PracticePage() {
                     <button
                       onClick={() => speakKannada(msg.kannada)}
                       className={`shrink-0 mt-0.5 ${msg.speaker === 'user' ? 'text-white/60 hover:text-white' : 'text-[#F5A623] hover:text-[#E8941A]'} transition-colors`}
-                      title="Listen"
+                      title={t('speakBtn')}
                     >
                       <Volume2 size={14} />
                     </button>
@@ -506,27 +538,28 @@ export default function PracticePage() {
           <div className="border-t border-[#E8E4DC] p-4 bg-[#FEFDFB]">
             {completed ? (
               <div className="text-center">
-                <p className="text-sm text-[#5A5A5A] mb-3">Scenario complete! 🎉</p>
+                <p className="text-sm font-medium text-[#1A1A1A] mb-1">{t('conversationCompleted')} 🎉</p>
+                <p className="text-xs text-[#5A5A5A] mb-4">{t('convoGreatJob')}</p>
                 <div className="flex items-center justify-center gap-3">
                   <button
                     onClick={() => startScenario(selectedScenario)}
                     className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-[#E8E4DC] text-sm font-medium text-[#5A5A5A] hover:bg-[#FAF8F4] transition-colors"
                   >
                     <RotateCcw size={13} />
-                    Try again
+                    {t('resetConversation')}
                   </button>
                   <button
                     onClick={handleReset}
                     className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#C0392B] text-white text-sm font-semibold hover:bg-[#a93226] transition-colors"
                   >
                     <MessageCircle size={13} />
-                    New scenario
+                    {t('chooseAnotherScenario')}
                   </button>
                 </div>
               </div>
             ) : currentStep?.options ? (
               <div className="space-y-2">
-                <p className="text-xs text-[#9A9A9A] mb-2 font-medium">Choose your reply:</p>
+                <p className="text-xs text-[#9A9A9A] mb-2 font-medium">{t('yourTurn')}</p>
                 {currentStep.options.map((opt, i) => (
                   <button
                     key={i}

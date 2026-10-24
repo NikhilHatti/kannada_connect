@@ -3,6 +3,19 @@ import { ArrowLeft } from 'lucide-react';
 import PhraseCard from '../../components/PhraseCard/PhraseCard';
 import { FEATURE_CARDS } from '../../data';
 import { useLanguage } from '../../context/LanguageContext';
+import type { UIStrings } from '../../types';
+
+const CATEGORY_TRANSLATIONS: Record<
+  string,
+  { titleKey: keyof UIStrings; descKey: keyof UIStrings }
+> = {
+  'bus-travel': { titleKey: 'catBusTitle', descKey: 'catBusDesc' },
+  'shopping': { titleKey: 'catShoppingTitle', descKey: 'catShoppingDesc' },
+  'restaurant': { titleKey: 'catRestaurantTitle', descKey: 'catRestaurantDesc' },
+  'hospital': { titleKey: 'catHospitalTitle', descKey: 'catHospitalDesc' },
+  'college-workplace': { titleKey: 'catCollegeTitle', descKey: 'catCollegeDesc' },
+  'practice-ai': { titleKey: 'catPracticeTitle', descKey: 'catPracticeDesc' },
+};
 
 export default function CategoryPage() {
   const { categoryId } = useParams<{ categoryId: string }>();
@@ -11,15 +24,19 @@ export default function CategoryPage() {
 
   if (!card) return <Navigate to="/learn" replace />;
 
+  const mapping = card ? CATEGORY_TRANSLATIONS[card.id] : undefined;
+  const translatedTitle = mapping ? t(mapping.titleKey) : card.title;
+  const translatedDesc = mapping ? t(mapping.descKey) : card.description;
+
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-[#9A9A9A] mb-6">
-        <Link to="/" className="hover:text-[#1A1A1A]">Home</Link>
+        <Link to="/" className="hover:text-[#1A1A1A]">{t('navHome')}</Link>
         <span>/</span>
-        <Link to="/learn" className="hover:text-[#1A1A1A]">Learn</Link>
+        <Link to="/learn" className="hover:text-[#1A1A1A]">{t('navLearn')}</Link>
         <span>/</span>
-        <span className="text-[#1A1A1A]">{card.title}</span>
+        <span className="text-[#1A1A1A]">{translatedTitle}</span>
       </div>
 
       {/* Back */}
@@ -39,9 +56,9 @@ export default function CategoryPage() {
           {card.icon}
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-[#1A1A1A] mb-0.5">{card.title}</h1>
+          <h1 className="text-2xl font-bold text-[#1A1A1A] mb-0.5">{translatedTitle}</h1>
           <p className="text-sm text-[#F5A623] font-medium kannada-text mb-1">{card.kannadaTitle}</p>
-          <p className="text-sm text-[#5A5A5A]">{card.description}</p>
+          <p className="text-sm text-[#5A5A5A]">{translatedDesc}</p>
         </div>
       </div>
 
@@ -63,8 +80,8 @@ export default function CategoryPage() {
       ) : (
         <div className="text-center py-16">
           <div className="text-5xl mb-4">🚧</div>
-          <h3 className="font-semibold text-[#1A1A1A] mb-2">Coming soon</h3>
-          <p className="text-sm text-[#9A9A9A]">We're working on this section. Check back soon!</p>
+          <h3 className="font-semibold text-[#1A1A1A] mb-2">{t('comingSoon')}</h3>
+          <p className="text-sm text-[#9A9A9A]">We&apos;re working on this section. Check back soon!</p>
         </div>
       )}
     </div>

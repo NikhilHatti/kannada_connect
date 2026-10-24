@@ -11,6 +11,8 @@ import {
   Type,
   Loader2,
 } from 'lucide-react';
+import { useLanguage } from '../../context/LanguageContext';
+import { speakKannada } from '../../utils/speech';
 
 /* ─── Language list ─── */
 const LANGUAGES = [
@@ -50,25 +52,7 @@ async function translateText(
   return data.responseData?.translatedText ?? '';
 }
 
-/* ─── Speak Kannada text ─── */
-function speakKannada(text: string) {
-  const synth = window.speechSynthesis;
-  synth.cancel();
-  const utt = new SpeechSynthesisUtterance(text);
-  utt.lang = 'kn-IN';
-  utt.rate = 0.85;
-  utt.pitch = 1.0;
 
-  const voices = synth.getVoices();
-  const best =
-    voices.find((v) => v.lang === 'kn-IN') ??
-    voices.find((v) => v.lang.startsWith('kn')) ??
-    voices.find((v) => v.name.toLowerCase().includes('kannada')) ??
-    null;
-  if (best) utt.voice = best;
-
-  synth.speak(utt);
-}
 
 /* ─── SpeechRecognition type shim ─── */
 type SpeechRecognitionType = typeof window extends { SpeechRecognition: infer T }
@@ -87,13 +71,21 @@ function getSpeechRecognition(): SpeechRecognitionType | null {
    ══════════════════════════════════════ */
 
 export default function TranslatePage() {
-  const [sourceLang, setSourceLang] = useState('en');
+  const { t, selectedLanguage } = useLanguage();
+  const [sourceLang, setSourceLang] = useState(selectedLanguage.code || 'en');
   const [inputText, setInputText] = useState('');
   const [translatedText, setTranslatedText] = useState('');
   const [isTranslating, setIsTranslating] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState('');
+
+  // Sync sourceLang when global language changes
+  useEffect(() => {
+    if (selectedLanguage.code) {
+      setSourceLang(selectedLanguage.code);
+    }
+  }, [selectedLanguage.code]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recognitionRef = useRef<any>(null);
@@ -121,11 +113,17 @@ export default function TranslatePage() {
   );
 
   useEffect(() => {
-    clearTimeout(debounceRef.current);
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
     debounceRef.current = setTimeout(() => {
       doTranslate(inputText, sourceLang);
     }, 600);
-    return () => clearTimeout(debounceRef.current);
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
   }, [inputText, sourceLang, doTranslate]);
 
   /* ── Voice input via Web Speech API ── */
@@ -176,9 +174,6 @@ export default function TranslatePage() {
     setTimeout(() => setCopied(false), 1500);
   }
 
-  /* ── Swap (put translated text back as input, switch lang to kn→source) ── */
-  // Since target is always Kannada, swap doesn't fully apply.
-  // Instead we clear fields.
   function handleClear() {
     setInputText('');
     setTranslatedText('');
@@ -190,10 +185,10 @@ export default function TranslatePage() {
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-[#9A9A9A] mb-6">
         <Link to="/" className="hover:text-[#1A1A1A]">
-          Home
+          {t('navHome')}
         </Link>
         <span>/</span>
-        <span className="text-[#1A1A1A]">Translate</span>
+        <span className="text-[#1A1A1A]">{t('navTranslate')}</span>
       </div>
 
       <Link
@@ -201,20 +196,20 @@ export default function TranslatePage() {
         className="inline-flex items-center gap-1.5 text-sm text-[#5A5A5A] hover:text-[#1A1A1A] mb-8 transition-colors"
       >
         <ArrowLeft size={15} />
-        Back to home
+        {t('backToHome')}
       </Link>
 
       {/* Header */}
       <div className="text-center mb-10">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-gradient-to-r from-[#FDE8C0] to-[#FADADD] rounded-full text-xs font-semibold text-[#C0392B] uppercase tracking-wide mb-4">
           <ArrowRightLeft size={13} />
-          Translator
+          {t('translatorBadge')}
         </div>
         <h1 className="text-3xl sm:text-4xl font-extrabold text-[#1A1A1A] mb-2">
-          Translate to <span className="text-[#C0392B]">ಕನ್ನಡ</span>
+          {t('translateTitle')} <span className="text-[#C0392B]">ಕನ್ನಡ</span>
         </h1>
         <p className="text-[#5A5A5A] text-sm max-w-md mx-auto">
-          Type, paste, or speak in any language — get an instant Kannada translation with pronunciation.
+          {t('translateSubtitle')}
         </p>
       </div>
 
@@ -248,11 +243,12 @@ export default function TranslatePage() {
               {/* Voice input button */}
               <button
                 onClick={toggleVoiceInput}
-                className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all duration-200 ${isListening
+                className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all duration-200 ${
+                  isListening
                     ? 'border-[#C0392B] bg-red-50 text-[#C0392B] animate-pulse scale-110'
                     : 'border-[#E8E4DC] text-[#9A9A9A] hover:text-[#C0392B] hover:border-[#C0392B] hover:bg-red-50'
-                  }`}
-                title={isListening ? 'Stop listening' : 'Speak to translate'}
+                }`}
+                title={isListening ? t('listeningBtn') : t('voiceInputBtn')}
               >
                 {isListening ? <MicOff size={16} /> : <Mic size={16} />}
               </button>
@@ -264,8 +260,8 @@ export default function TranslatePage() {
               onChange={(e) => setInputText(e.target.value)}
               placeholder={
                 isListening
-                  ? 'Listening… speak now'
-                  : 'Type or paste text here…'
+                  ? t('listeningPlaceholder')
+                  : t('inputPlaceholder')
               }
               rows={4}
               className="w-full resize-none text-[#1A1A1A] text-base placeholder-[#C0C0C0] bg-transparent border-none outline-none leading-relaxed"
@@ -274,14 +270,14 @@ export default function TranslatePage() {
             {/* Character count & clear */}
             <div className="flex items-center justify-between mt-2">
               <span className="text-xs text-[#C0C0C0]">
-                {inputText.length} characters
+                {inputText.length} {t('charactersCount')}
               </span>
               {inputText && (
                 <button
                   onClick={handleClear}
                   className="text-xs text-[#9A9A9A] hover:text-[#C0392B] transition-colors"
                 >
-                  Clear
+                  {t('clearBtn')}
                 </button>
               )}
             </div>
@@ -316,7 +312,7 @@ export default function TranslatePage() {
                   onClick={() => translatedText && speakKannada(translatedText)}
                   disabled={!translatedText}
                   className="w-9 h-9 rounded-xl border border-[#E8E4DC] flex items-center justify-center text-[#F5A623] hover:bg-[#FDE8C0] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                  title="Listen to Kannada pronunciation"
+                  title={t('speakBtn')}
                 >
                   <Volume2 size={16} />
                 </button>
@@ -326,7 +322,7 @@ export default function TranslatePage() {
                   onClick={handleCopy}
                   disabled={!translatedText}
                   className="w-9 h-9 rounded-xl border border-[#E8E4DC] flex items-center justify-center text-[#9A9A9A] hover:text-[#1A1A1A] hover:bg-[#FAF8F4] disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                  title="Copy translation"
+                  title={t('copyBtn')}
                 >
                   {copied ? (
                     <Check size={16} className="text-green-500" />
@@ -347,7 +343,7 @@ export default function TranslatePage() {
                 </p>
               ) : (
                 <p className="text-base text-[#C0C0C0]">
-                  Translation will appear here…
+                  {t('waitingTranslation')}
                 </p>
               )}
             </div>
@@ -360,17 +356,17 @@ export default function TranslatePage() {
             {
               icon: '⌨️',
               title: 'Text to Text',
-              desc: 'Type in any language and see the Kannada translation instantly.',
+              desc: t('step1Desc'),
             },
             {
               icon: '🎤',
               title: 'Voice to Text',
-              desc: 'Click the mic, speak in your language, and get Kannada output.',
+              desc: t('step2Desc'),
             },
             {
               icon: '🔊',
               title: 'Text to Voice',
-              desc: 'Click the speaker icon to hear the Kannada pronunciation.',
+              desc: t('step3Desc'),
             },
           ].map((tip) => (
             <div

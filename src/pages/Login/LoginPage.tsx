@@ -1,12 +1,24 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import GoogleAccountModal from './GoogleAccountModal';
+import {
+  getGoogleClientId,
+  requestGoogleRealLogin,
+  type GoogleUserProfile,
+} from '../../services/googleAuth';
 import './LoginPage.css';
 
 // ── Validation helpers ──────────────────────────
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-const SPECIAL_RE = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]/;
+const SPECIAL_RE = /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?`~]/;
+
+function validateName(val: string): string {
+  if (!val.trim()) return 'Name is required.';
+  if (val.trim().length < 2) return 'Name must be at least 2 characters.';
+  return '';
+}
 
 function validateEmail(val: string): string {
   if (!val) return 'Email is required.';
@@ -22,18 +34,39 @@ function validatePassword(val: string): string {
 }
 // ────────────────────────────────────────────────
 
-export default function LoginPage() {
+interface LoginPageProps {
+  initialMode?: 'signin' | 'signup';
+}
+
+export default function LoginPage({ initialMode = 'signin' }: LoginPageProps) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { login } = useAuth();
+
+  const [isSignUp, setIsSignUp] = useState(
+    initialMode === 'signup' || searchParams.get('mode') === 'signup'
+  );
+
+  const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
+  const [googleError, setGoogleError] = useState('');
+  const [generalMsg, setGeneralMsg] = useState('');
 
   // Per-field errors shown after the field is touched
+  const [nameErr, setNameErr] = useState('');
   const [emailErr, setEmailErr] = useState('');
   const [pwErr, setPwErr] = useState('');
-  const [touched, setTouched] = useState({ email: false, password: false });
+  const [touched, setTouched] = useState({ name: false, email: false, password: false });
+
+  function handleNameChange(val: string) {
+    setName(val);
+    if (touched.name) setNameErr(validateName(val));
+  }
 
   function handleEmailChange(val: string) {
     setEmail(val);
@@ -45,28 +78,121 @@ export default function LoginPage() {
     if (touched.password) setPwErr(validatePassword(val));
   }
 
-  function handleBlur(field: 'email' | 'password') {
+  function handleBlur(field: 'name' | 'email' | 'password') {
     setTouched((t) => ({ ...t, [field]: true }));
+    if (field === 'name') setNameErr(validateName(name));
     if (field === 'email') setEmailErr(validateEmail(email));
     if (field === 'password') setPwErr(validatePassword(password));
   }
 
+  function switchToSignUp() {
+    setIsSignUp(true);
+    setGeneralMsg('');
+    setNameErr('');
+    setEmailErr('');
+    setPwErr('');
+    setTouched({ name: false, email: false, password: false });
+  }
+
+  function switchToSignIn() {
+    setIsSignUp(false);
+    setGeneralMsg('');
+    setNameErr('');
+    setEmailErr('');
+    setPwErr('');
+    setTouched({ name: false, email: false, password: false });
+  }
+
+  function handleForgotPassword() {
+    if (!email) {
+      setEmailErr('Enter your email to receive a password reset link.');
+      setTouched((t) => ({ ...t, email: true }));
+      return;
+    }
+    const eErr = validateEmail(email);
+    if (eErr) {
+      setEmailErr(eErr);
+      setTouched((t) => ({ ...t, email: true }));
+      return;
+    }
+    setGeneralMsg(`Password reset instructions sent to ${email}`);
+  }
+
+  function handleGoogleButtonClick() {
+    setGeneralMsg('');
+    setGoogleError('');
+    const clientId = getGoogleClientId();
+
+    if (clientId) {
+      setGoogleLoading(true);
+      requestGoogleRealLogin(
+        clientId,
+        (profile) => {
+          setGoogleLoading(false);
+          login({
+            name: profile.name,
+            email: profile.email,
+            avatar: profile.avatar,
+          });
+          navigate('/');
+        },
+        (err) => {
+          setGoogleLoading(false);
+          setGoogleError(err);
+          setIsGoogleModalOpen(true);
+        }
+      );
+    } else {
+      setIsGoogleModalOpen(true);
+    }
+  }
+
+  function handleSelectGoogleAccount(account: GoogleUserProfile) {
+    login({
+      name: account.name,
+      email: account.email,
+      avatar: account.avatar,
+    });
+    setIsGoogleModalOpen(false);
+    navigate('/');
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    // Touch all fields to show any hidden errors
-    setTouched({ email: true, password: true });
-    const eErr = validateEmail(email);
-    const pErr = validatePassword(password);
-    setEmailErr(eErr);
-    setPwErr(pErr);
-    if (eErr || pErr) return;
+    setGeneralMsg('');
 
-    setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      login();
-      navigate('/');
-    }, 1000);
+    if (isSignUp) {
+      setTouched({ name: true, email: true, password: true });
+      const nErr = validateName(name);
+      const eErr = validateEmail(email);
+      const pErr = validatePassword(password);
+      setNameErr(nErr);
+      setEmailErr(eErr);
+      setPwErr(pErr);
+      if (nErr || eErr || pErr) return;
+
+      setLoading(true);
+      setTimeout(() => {
+        setLoading(false);
+        login({ name: name.trim(), email: email.trim() });
+        navigate('/');
+      }, 1000);
+    } else {
+      setTouched((t) => ({ ...t, email: true, password: true }));
+      const eErr = validateEmail(email);
+      const pErr = validatePassword(password);
+      setEmailErr(eErr);
+      setPwErr(pErr);
+      if (eErr || pErr) return;
+
+      setLoading(true);
+      setTimeout(() => {
+        setLoading(false);
+        const resolvedName = email.split('@')[0] || 'Learner';
+        login({ name: resolvedName, email: email.trim() });
+        navigate('/');
+      }, 1000);
+    }
   }
 
   return (
@@ -127,10 +253,43 @@ export default function LoginPage() {
             </span>
           </div>
 
-          <h1 className="login-form-title">Welcome back</h1>
-          <p className="login-form-sub">Sign in to continue your Kannada journey</p>
+          <h1 className="login-form-title">
+            {isSignUp ? 'Create an account' : 'Welcome back'}
+          </h1>
+          <p className="login-form-sub">
+            {isSignUp
+              ? 'Sign up free to begin your Kannada learning journey'
+              : 'Sign in to continue your Kannada journey'}
+          </p>
+
+          {generalMsg && (
+            <div className="login-message" role="status">
+              ✓ {generalMsg}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="login-form" noValidate>
+            {/* Full Name (Sign Up only) */}
+            {isSignUp && (
+              <div className="login-field">
+                <label htmlFor="name" className="login-label">Full Name</label>
+                <input
+                  id="name"
+                  type="text"
+                  autoComplete="name"
+                  placeholder="e.g. Priya Sharma"
+                  value={name}
+                  onChange={(e) => handleNameChange(e.target.value)}
+                  onBlur={() => handleBlur('name')}
+                  className={`login-input${nameErr ? ' login-input--error' : ''}`}
+                  aria-invalid={!!nameErr}
+                  aria-describedby={nameErr ? 'name-err' : undefined}
+                />
+                {nameErr && (
+                  <span id="name-err" className="login-field-err">{nameErr}</span>
+                )}
+              </div>
+            )}
 
             {/* Email */}
             <div className="login-field">
@@ -156,13 +315,21 @@ export default function LoginPage() {
             <div className="login-field">
               <div className="login-label-row">
                 <label htmlFor="password" className="login-label">Password</label>
-                <button type="button" className="login-forgot">Forgot password?</button>
+                {!isSignUp && (
+                  <button
+                    type="button"
+                    onClick={handleForgotPassword}
+                    className="login-forgot"
+                  >
+                    Forgot password?
+                  </button>
+                )}
               </div>
               <div className="login-input-wrap">
                 <input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
-                  autoComplete="current-password"
+                  autoComplete={isSignUp ? 'new-password' : 'current-password'}
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => handlePasswordChange(e.target.value)}
@@ -192,8 +359,18 @@ export default function LoginPage() {
             </div>
 
             {/* Submit */}
-            <button type="submit" disabled={loading} className="login-submit-btn">
-              {loading ? <span className="login-spinner" /> : 'Sign in'}
+            <button
+              type="submit"
+              disabled={loading}
+              className="login-submit-btn"
+            >
+              {loading ? (
+                <span className="login-spinner" />
+              ) : isSignUp ? (
+                'Create free account'
+              ) : (
+                'Sign in'
+              )}
             </button>
           </form>
 
@@ -205,23 +382,69 @@ export default function LoginPage() {
           </div>
 
           {/* Google */}
-          <button className="login-google-btn">
-            <svg width="18" height="18" viewBox="0 0 48 48" fill="none">
-              <path d="M44.5 20H24v8.5h11.7C34.2 33.9 29.7 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6-6C34.6 5.1 29.6 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21c10.5 0 20-7.5 20-21 0-1.4-.1-2.7-.5-4z" fill="#FFC107"/>
-              <path d="M6.3 14.7l7 5.1C15.1 16 19.2 13 24 13c3.1 0 5.9 1.1 8.1 2.9l6-6C34.6 5.1 29.6 3 24 3 16.3 3 9.6 7.9 6.3 14.7z" fill="#FF3D00"/>
-              <path d="M24 45c5.5 0 10.4-1.9 14.2-5.1l-6.6-5.4C29.7 36 27 37 24 37c-5.7 0-10.2-3.1-11.7-7.5l-7 5.4C8.6 41.1 15.7 45 24 45z" fill="#4CAF50"/>
-              <path d="M44.5 20H24v8.5h11.7c-.8 2.3-2.3 4.2-4.2 5.5l6.6 5.4C41.8 36.4 45 30.7 45 24c0-1.4-.1-2.7-.5-4z" fill="#1976D2"/>
-            </svg>
-            Continue with Google
+          <button
+            type="button"
+            onClick={handleGoogleButtonClick}
+            disabled={loading || googleLoading}
+            className="login-google-btn"
+          >
+            {googleLoading ? (
+              <>
+                <span className="login-spinner small" />
+                <span>Connecting to Google...</span>
+              </>
+            ) : (
+              <>
+                <svg width="18" height="18" viewBox="0 0 48 48" fill="none">
+                  <path d="M44.5 20H24v8.5h11.7C34.2 33.9 29.7 37 24 37c-7.2 0-13-5.8-13-13s5.8-13 13-13c3.1 0 5.9 1.1 8.1 2.9l6-6C34.6 5.1 29.6 3 24 3 12.4 3 3 12.4 3 24s9.4 21 21 21c10.5 0 20-7.5 20-21 0-1.4-.1-2.7-.5-4z" fill="#FFC107"/>
+                  <path d="M6.3 14.7l7 5.1C15.1 16 19.2 13 24 13c3.1 0 5.9 1.1 8.1 2.9l6-6C34.6 5.1 29.6 3 24 3 16.3 3 9.6 7.9 6.3 14.7z" fill="#FF3D00"/>
+                  <path d="M24 45c5.5 0 10.4-1.9 14.2-5.1l-6.6-5.4C29.7 36 27 37 24 37c-5.7 0-10.2-3.1-11.7-7.5l-7 5.4C8.6 41.1 15.7 45 24 45z" fill="#4CAF50"/>
+                  <path d="M44.5 20H24v8.5h11.7c-.8 2.3-2.3 4.2-4.2 5.5l6.6 5.4C41.8 36.4 45 30.7 45 24c0-1.4-.1-2.7-.5-4z" fill="#1976D2"/>
+                </svg>
+                {isSignUp ? 'Sign up with Google' : 'Continue with Google'}
+              </>
+            )}
           </button>
 
-          {/* Sign up */}
-          <p className="login-signup-text">
-            Don't have an account?{' '}
-            <button className="login-signup-link">Sign up free</button>
-          </p>
+          {/* Toggle Sign in / Sign up */}
+          {isSignUp ? (
+            <p className="login-signup-text">
+              Already have an account?{' '}
+              <button
+                type="button"
+                onClick={switchToSignIn}
+                className="login-signup-link"
+              >
+                Sign in
+              </button>
+            </p>
+          ) : (
+            <p className="login-signup-text">
+              Don't have an account?{' '}
+              <button
+                type="button"
+                onClick={switchToSignUp}
+                className="login-signup-link"
+              >
+                Sign up free
+              </button>
+            </p>
+          )}
         </div>
       </div>
+
+      {/* ── Google Account Chooser Modal ── */}
+      {isGoogleModalOpen && (
+        <GoogleAccountModal
+          isOpen={isGoogleModalOpen}
+          onClose={() => {
+            setIsGoogleModalOpen(false);
+            setGoogleError('');
+          }}
+          onSelectAccount={handleSelectGoogleAccount}
+          initialError={googleError}
+        />
+      )}
     </div>
   );
 }

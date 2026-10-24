@@ -421,10 +421,31 @@
   animation: spin 0.7s linear infinite;
 }
 
+.login-spinner.small {
+  width: 14px;
+  height: 14px;
+  border-width: 2px;
+}
+
 @keyframes spin {
   to {
     transform: rotate(360deg);
   }
+}
+
+/* Success / Info Message */
+.login-message {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(39, 174, 96, 0.22);
+  color: #A9DFBF;
+  font-size: 0.84rem;
+  padding: 0.7rem 0.95rem;
+  border-radius: 12px;
+  border: 1px solid rgba(39, 174, 96, 0.45);
+  margin-bottom: 0.5rem;
+  animation: errSlide 0.18s ease;
 }
 
 /* Divider */
@@ -461,14 +482,19 @@
   font-weight: 600;
   color: #fff;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  transition: background 0.15s, border-color 0.15s, opacity 0.15s;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }
 
-.login-google-btn:hover {
+.login-google-btn:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.16);
   border-color: rgba(255, 255, 255, 0.35);
+}
+
+.login-google-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
 }
 
 /* Sign up */

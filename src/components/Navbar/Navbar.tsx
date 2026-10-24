@@ -2,18 +2,21 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { LogOut, User } from 'lucide-react';
 import LanguageSelector from '../LanguageSelector/LanguageSelector';
 import { useAuth } from '../../context/AuthContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 export default function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { isLoggedIn, logout } = useAuth();
+  const { isLoggedIn, logout, user } = useAuth();
+  const { t } = useLanguage();
 
   const navLinks = [
-    { label: 'Home', path: '/' },
-    { label: 'Learn', path: '/learn' },
-    { label: 'Practice', path: '/practice' },
-    { label: 'Translate', path: '/translate' },
-    { label: 'About', path: '/about' },
+    { label: t('navHome'), path: '/' },
+    { label: t('navLearn'), path: '/learn' },
+    { label: t('navMissions'), path: '/missions' },
+    { label: t('navPractice'), path: '/practice' },
+    { label: t('navTranslate'), path: '/translate' },
+    { label: t('navAbout'), path: '/about' },
   ];
 
   function handleLogout() {
@@ -43,7 +46,7 @@ export default function Navbar() {
                 to={link.path}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                   location.pathname === link.path
-                    ? 'text-[#C0392B] bg-red-50'
+                    ? 'text-[#C0392B] bg-red-50 font-semibold'
                     : 'text-[#5A5A5A] hover:text-[#1A1A1A] hover:bg-[#FAF8F4]'
                 }`}
               >
@@ -58,18 +61,32 @@ export default function Navbar() {
               <>
                 {/* User avatar indicator */}
                 <div className="hidden sm:flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#F5A623] to-[#C0392B] flex items-center justify-center text-white shadow-sm">
-                    <User size={15} />
-                  </div>
+                  {user?.avatar ? (
+                    <img
+                      src={user.avatar}
+                      alt={user.name}
+                      className="w-8 h-8 rounded-full object-cover shadow-sm border border-[#E8E4DC]"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#F5A623] to-[#C0392B] flex items-center justify-center text-white shadow-sm text-xs font-bold">
+                      {user?.name ? user.name.charAt(0).toUpperCase() : <User size={15} />}
+                    </div>
+                  )}
+                  {user?.name && (
+                    <span className="text-xs font-semibold text-[#3A3A3A] max-w-[110px] truncate">
+                      {user.name}
+                    </span>
+                  )}
                 </div>
                 {/* Logout button */}
                 <button
                   onClick={handleLogout}
                   className="hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-xl border border-[#E8E4DC] bg-white text-sm font-medium text-[#5A5A5A] hover:text-[#C0392B] hover:border-[#C0392B] transition-colors shadow-sm"
-                  title="Sign out"
+                  title={t('signOut')}
                 >
                   <LogOut size={14} />
-                  Sign out
+                  {t('signOut')}
                 </button>
               </>
             ) : (
@@ -77,7 +94,7 @@ export default function Navbar() {
                 to="/login"
                 className="hidden sm:inline-flex items-center px-4 py-2 rounded-xl border border-[#E8E4DC] bg-white text-sm font-medium text-[#1A1A1A] hover:bg-[#FAF8F4] transition-colors shadow-sm"
               >
-                Sign in
+                {t('signIn')}
               </Link>
             )}
             <LanguageSelector />
@@ -92,7 +109,7 @@ export default function Navbar() {
               to={link.path}
               className={`flex-shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                 location.pathname === link.path
-                  ? 'text-[#C0392B] bg-red-50'
+                  ? 'text-[#C0392B] bg-red-50 font-semibold'
                   : 'text-[#5A5A5A] hover:bg-[#FAF8F4]'
               }`}
             >
@@ -105,7 +122,7 @@ export default function Navbar() {
               onClick={handleLogout}
               className="flex-shrink-0 px-3 py-1.5 rounded-lg text-sm font-medium text-[#C0392B] hover:bg-red-50 transition-colors"
             >
-              Sign out
+              {t('signOut')}
             </button>
           )}
         </div>

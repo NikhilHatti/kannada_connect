@@ -13,9 +13,9 @@ export default function LearnPage() {
       {/* Header */}
       <div className="mb-8">
         <div className="flex items-center gap-2 text-sm text-[#9A9A9A] mb-2">
-          <Link to="/" className="hover:text-[#1A1A1A]">Home</Link>
+          <Link to="/" className="hover:text-[#1A1A1A]">{t('navHome')}</Link>
           <span>/</span>
-          <span className="text-[#1A1A1A]">Learn</span>
+          <span className="text-[#1A1A1A]">{t('navLearn')}</span>
         </div>
         <h1 className="text-3xl font-bold text-[#1A1A1A] mb-2">{t('chooseCategory')}</h1>
         <p className="text-[#5A5A5A]">{t('chooseCategoryDesc')}</p>

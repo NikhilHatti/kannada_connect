@@ -3,63 +3,12 @@ import { Volume2, ChevronDown, ChevronUp } from 'lucide-react';
 import type { Phrase } from '../../types';
 import type { SupportedLang } from '../../types';
 import { useLanguage } from '../../context/LanguageContext';
+import { speakKannada, stopAudio } from '../../utils/speech';
 
 interface PhraseCardProps {
   phrase: Phrase;
 }
 
-/* ─────────────────────────────────────────────────────────────
-   Voice helper — loads voices once, picks the best Kannada one
-   ───────────────────────────────────────────────────────────── */
-let kannadaVoice: SpeechSynthesisVoice | null = null;
-let voicesReady = false;
-
-function loadVoices(): void {
-  const synth = window.speechSynthesis;
-
-  function pickAndCache() {
-    const voices = synth.getVoices();
-    if (voices.length === 0) return;
-    voicesReady = true;
-
-    // Priority order: exact kn-IN → any kn-* → "Kannada" in name → hi-IN
-    kannadaVoice =
-      voices.find((v) => v.lang === 'kn-IN') ??
-      voices.find((v) => v.lang.startsWith('kn')) ??
-      voices.find((v) => v.name.toLowerCase().includes('kannada')) ??
-      voices.find((v) => v.lang === 'hi-IN') ??
-      null;
-  }
-
-  pickAndCache();
-  if (!voicesReady) {
-    synth.onvoiceschanged = () => pickAndCache();
-  }
-}
-
-/* ─────────────────────────────────────────────────────────────
-   Speak — instant, no network call, no delay
-   ───────────────────────────────────────────────────────────── */
-function speakKannada(text: string, onEnd?: () => void): void {
-  const synth = window.speechSynthesis;
-  synth.cancel();
-
-  const utt = new SpeechSynthesisUtterance(text);
-  utt.lang = 'kn-IN';
-  utt.rate = 0.85;   // natural pace — clear syllables without robotic drag
-  utt.pitch = 1.0;
-  utt.volume = 1.0;
-
-  if (kannadaVoice) utt.voice = kannadaVoice;
-
-  utt.onend = () => onEnd?.();
-  utt.onerror = () => onEnd?.();
-  synth.speak(utt);
-}
-
-/* ─────────────────────────────────────────────────────────────
-   Component
-   ───────────────────────────────────────────────────────────── */
 export default function PhraseCard({ phrase }: PhraseCardProps) {
   const [expanded, setExpanded] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -71,26 +20,27 @@ export default function PhraseCard({ phrase }: PhraseCardProps) {
 
   useEffect(() => {
     isMounted.current = true;
-    if ('speechSynthesis' in window && !voicesReady) loadVoices();
     return () => {
       isMounted.current = false;
+      stopAudio();
     };
   }, []);
 
   const speak = useCallback(() => {
-    if (!('speechSynthesis' in window)) return;
-
     if (isPlaying) {
-      window.speechSynthesis.cancel();
+      stopAudio();
       setIsPlaying(false);
       return;
     }
 
     setIsPlaying(true);
-    speakKannada(phrase.kannada, () => {
-      if (isMounted.current) setIsPlaying(false);
+    speakKannada(phrase.kannada, {
+      transliteration: phrase.transliteration,
+      onEnd: () => {
+        if (isMounted.current) setIsPlaying(false);
+      },
     });
-  }, [isPlaying, phrase.kannada]);
+  }, [isPlaying, phrase.kannada, phrase.transliteration]);
 
   return (
     <div className="bg-white rounded-2xl border border-[#E8E4DC] p-4 shadow-sm">

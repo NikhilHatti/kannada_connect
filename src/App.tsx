@@ -1,12 +1,14 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { LanguageProvider } from './context/LanguageContext';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { GamificationProvider } from './context/GamificationContext';
 import Navbar from './components/Navbar/Navbar';
 import Footer from './components/Footer/Footer';
 import HomePage from './pages/Home/HomePage';
 import LearnPage from './pages/Learn/LearnPage';
 import CategoryPage from './pages/Learn/CategoryPage';
 import PracticePage from './pages/Practice/PracticePage';
+import MissionsPage from './pages/Missions/MissionsPage';
 import AboutPage from './pages/About/AboutPage';
 import TranslatePage from './pages/Translate/TranslatePage';
 import LoginPage from './pages/Login/LoginPage';
@@ -28,12 +30,20 @@ function RedirectIfAuth({ children }: { children: React.ReactNode }) {
 function AppShell() {
   return (
     <Routes>
-      {/* ── Login: full-screen, no navbar/footer ── */}
+      {/* ── Login & Sign Up: full-screen, no navbar/footer ── */}
       <Route
         path="/login"
         element={
           <RedirectIfAuth>
             <LoginPage />
+          </RedirectIfAuth>
+        }
+      />
+      <Route
+        path="/signup"
+        element={
+          <RedirectIfAuth>
+            <LoginPage initialMode="signup" />
           </RedirectIfAuth>
         }
       />
@@ -50,6 +60,7 @@ function AppShell() {
                 <Route path="/learn" element={<RequireAuth><LearnPage /></RequireAuth>} />
                 <Route path="/learn/:categoryId" element={<RequireAuth><CategoryPage /></RequireAuth>} />
                 <Route path="/practice" element={<RequireAuth><PracticePage /></RequireAuth>} />
+                <Route path="/missions" element={<RequireAuth><MissionsPage /></RequireAuth>} />
                 <Route path="/about" element={<RequireAuth><AboutPage /></RequireAuth>} />
                 <Route path="/translate" element={<RequireAuth><TranslatePage /></RequireAuth>} />
                 <Route path="*" element={<Navigate to="/" replace />} />
@@ -67,9 +78,11 @@ export default function App() {
   return (
     <AuthProvider>
       <LanguageProvider>
-        <BrowserRouter>
-          <AppShell />
-        </BrowserRouter>
+        <GamificationProvider>
+          <BrowserRouter>
+            <AppShell />
+          </BrowserRouter>
+        </GamificationProvider>
       </LanguageProvider>
     </AuthProvider>
   );

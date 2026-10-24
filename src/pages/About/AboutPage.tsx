@@ -1,14 +1,17 @@
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
+import { useLanguage } from '../../context/LanguageContext';
 
 export default function AboutPage() {
+  const { t } = useLanguage();
+
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-[#9A9A9A] mb-6">
-        <Link to="/" className="hover:text-[#1A1A1A]">Home</Link>
+        <Link to="/" className="hover:text-[#1A1A1A]">{t('navHome')}</Link>
         <span>/</span>
-        <span className="text-[#1A1A1A]">About</span>
+        <span className="text-[#1A1A1A]">{t('navAbout')}</span>
       </div>
 
       <Link
@@ -16,37 +19,28 @@ export default function AboutPage() {
         className="inline-flex items-center gap-1.5 text-sm text-[#5A5A5A] hover:text-[#1A1A1A] mb-6 transition-colors"
       >
         <ArrowLeft size={15} />
-        Back to home
+        {t('backToHome')}
       </Link>
 
-      <h1 className="text-3xl font-bold text-[#1A1A1A] mb-4">About KannadaConnect</h1>
+      <h1 className="text-3xl font-bold text-[#1A1A1A] mb-4">{t('aboutTitle')}</h1>
 
       <div className="space-y-6 text-[#5A5A5A] text-sm leading-relaxed">
-        <p>
-          <strong className="text-[#1A1A1A]">KannadaConnect</strong> is an AI-powered Kannada
-          communication assistant built for people who move to Karnataka but don't speak the local
-          language. Whether you're a student, professional, or traveller, this app helps you
-          communicate confidently in everyday situations.
-        </p>
+        <p>{t('aboutP1')}</p>
 
         <div className="bg-[#FDE8C0] rounded-2xl p-5">
-          <h2 className="font-semibold text-[#1A1A1A] mb-2">Our mission</h2>
-          <p>
-            To bridge the language gap for Karnataka's growing diverse population — making it easier
-            to navigate daily life while respecting and appreciating the beautiful Kannada language
-            and culture.
-          </p>
+          <h2 className="font-semibold text-[#1A1A1A] mb-2">{t('ourMission')}</h2>
+          <p>{t('ourMissionDesc')}</p>
         </div>
 
         <div>
-          <h2 className="font-semibold text-[#1A1A1A] mb-3">What we offer</h2>
+          <h2 className="font-semibold text-[#1A1A1A] mb-3">{t('whatWeOffer')}</h2>
           <ul className="space-y-2">
             {[
-              'Curated Kannada phrases for 5 real-life situations',
-              'Text-to-speech pronunciation for all phrases',
-              'Transliteration in Roman script for easy reading',
-              'Multi-language interface (English, Hindi, Tamil and more)',
-              'AI conversation practice (coming soon)',
+              t('offerItem1'),
+              t('offerItem2'),
+              t('offerItem3'),
+              t('offerItem4'),
+              t('offerItem5'),
             ].map((item) => (
               <li key={item} className="flex items-start gap-2">
                 <span className="mt-0.5 w-1.5 h-1.5 rounded-full bg-[#C0392B] shrink-0" />
@@ -57,7 +51,7 @@ export default function AboutPage() {
         </div>
 
         <p className="text-xs text-[#9A9A9A] border-t border-[#E8E4DC] pt-4">
-          🙏 ಧನ್ಯವಾದ (Dhanyavāda) — Thank you for using KannadaConnect.
+          {t('thankYouNote')}
         </p>
       </div>
     </div>

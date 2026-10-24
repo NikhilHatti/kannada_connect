@@ -1,4 +1,8 @@
+import { useLanguage } from '../../context/LanguageContext';
+
 export default function Footer() {
+  const { t } = useLanguage();
+
   return (
     <footer className="mt-auto border-t border-[#E8E4DC] bg-white">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -15,12 +19,12 @@ export default function Footer() {
 
           {/* Tagline */}
           <p className="text-sm text-[#9A9A9A] text-center">
-            Learn Kannada. Speak confidently. Connect with Karnataka.
+            {t('footerTagline')}
           </p>
 
           {/* Credit */}
           <p className="text-xs text-[#9A9A9A]">
-            🇮🇳 Made with ❤️ for Karnataka
+            {t('madeWithLove')}
           </p>
         </div>
       </div>

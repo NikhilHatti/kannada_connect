@@ -1,11 +1,27 @@
-import type { HowItWorksStep } from '../../types';
+import type { HowItWorksStep, UIStrings } from '../../types';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface StepCardProps {
   step: HowItWorksStep;
   isLast: boolean;
 }
 
+const STEP_TRANSLATIONS: Record<
+  number,
+  { titleKey: keyof UIStrings; descKey: keyof UIStrings }
+> = {
+  1: { titleKey: 'step1Title', descKey: 'step1Desc' },
+  2: { titleKey: 'step2Title', descKey: 'step2Desc' },
+  3: { titleKey: 'step3Title', descKey: 'step3Desc' },
+};
+
 export default function StepCard({ step, isLast }: StepCardProps) {
+  const { t } = useLanguage();
+
+  const mapping = STEP_TRANSLATIONS[step.step];
+  const translatedTitle = mapping ? t(mapping.titleKey) : step.title;
+  const translatedDesc = mapping ? t(mapping.descKey) : step.description;
+
   return (
     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
       {/* Step content */}
@@ -17,9 +33,9 @@ export default function StepCard({ step, isLast }: StepCardProps) {
           <div>
             <div className="flex items-center gap-2 mb-1">
               <span className="text-xl">{step.icon}</span>
-              <h3 className="font-semibold text-[#1A1A1A]">{step.title}</h3>
+              <h3 className="font-semibold text-[#1A1A1A]">{translatedTitle}</h3>
             </div>
-            <p className="text-sm text-[#5A5A5A] leading-relaxed">{step.description}</p>
+            <p className="text-sm text-[#5A5A5A] leading-relaxed">{translatedDesc}</p>
           </div>
         </div>
       </div>
