@@ -243,11 +243,10 @@ export default function TranslatePage() {
               {/* Voice input button */}
               <button
                 onClick={toggleVoiceInput}
-                className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all duration-200 ${
-                  isListening
+                className={`w-9 h-9 rounded-xl border flex items-center justify-center transition-all duration-200 ${isListening
                     ? 'border-[#C0392B] bg-red-50 text-[#C0392B] animate-pulse scale-110'
                     : 'border-[#E8E4DC] text-[#9A9A9A] hover:text-[#C0392B] hover:border-[#C0392B] hover:bg-red-50'
-                }`}
+                  }`}
                 title={isListening ? t('listeningBtn') : t('voiceInputBtn')}
               >
                 {isListening ? <MicOff size={16} /> : <Mic size={16} />}
@@ -355,17 +354,17 @@ export default function TranslatePage() {
           {[
             {
               icon: '⌨️',
-              title: 'Text to Text',
+              title: t('textToText'),
               desc: t('step1Desc'),
             },
             {
               icon: '🎤',
-              title: 'Voice to Text',
+              title: t('voiceToText'),
               desc: t('step2Desc'),
             },
             {
               icon: '🔊',
-              title: 'Text to Voice',
+              title: t('textToVoice'),
               desc: t('step3Desc'),
             },
           ].map((tip) => (

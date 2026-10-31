@@ -2,6 +2,8 @@ import { useEffect } from 'react';
 import { Sparkles, ArrowRight, X } from 'lucide-react';
 import type { GamificationLevel } from '../../types/gamification';
 import { soundEffects } from '../../utils/soundEffects';
+import { useLanguage } from '../../context/LanguageContext';
+import { getLocalizedLevel } from '../../data/gamificationTranslations';
 
 interface LevelUpModalProps {
   level: GamificationLevel;
@@ -9,6 +11,9 @@ interface LevelUpModalProps {
 }
 
 export default function LevelUpModal({ level, onClose }: LevelUpModalProps) {
+  const { t, currentLang } = useLanguage();
+  const localized = getLocalizedLevel(level, currentLang);
+
   useEffect(() => {
     soundEffects.playLevelUp();
   }, [level]);
@@ -39,7 +44,7 @@ export default function LevelUpModal({ level, onClose }: LevelUpModalProps) {
             {level.badgeIcon}
           </div>
           <div className="absolute -top-2 -right-2 bg-[#C0392B] text-white text-[11px] font-black px-2.5 py-0.5 rounded-full shadow-md uppercase tracking-wider">
-            Level {level.level}
+            {t('realmLevelPrefix')} {level.level}
           </div>
         </div>
 
@@ -47,16 +52,16 @@ export default function LevelUpModal({ level, onClose }: LevelUpModalProps) {
         <div>
           <div className="inline-flex items-center gap-1.5 text-xs font-bold text-amber-700 bg-amber-100 px-3 py-1 rounded-full uppercase tracking-wider mb-2">
             <Sparkles size={14} className="text-amber-600" />
-            Level Up Achieved!
+            {t('levelUpAchieved')}
           </div>
           <h2 className="text-2xl font-black text-[#1A1A1A]">
-            {level.title}
+            {localized.title}
           </h2>
           <div className="text-lg font-bold text-[#C0392B] kannada-text mt-0.5">
             {level.kannadaTitle}
           </div>
           <p className="text-xs sm:text-sm text-[#5A5A5A] mt-2">
-            {level.description}
+            {localized.description}
           </p>
         </div>
 
@@ -64,7 +69,7 @@ export default function LevelUpModal({ level, onClose }: LevelUpModalProps) {
         {level.perks && level.perks.length > 0 && (
           <div className="bg-[#FAF8F4] border border-[#E8E4DC] rounded-2xl p-4 text-left space-y-2">
             <div className="text-xs font-bold text-[#8A7A6A] uppercase tracking-wider">
-              Unlocked Perks & Scenarios:
+              {t('unlockedPerksLabel')}
             </div>
             <ul className="space-y-1.5">
               {level.perks.map((perk, i) => (
@@ -82,7 +87,7 @@ export default function LevelUpModal({ level, onClose }: LevelUpModalProps) {
           onClick={onClose}
           className="w-full inline-flex items-center justify-center gap-2 py-3.5 px-6 rounded-2xl bg-gradient-to-r from-[#C0392B] to-[#F5A623] text-white font-bold text-sm shadow-md hover:opacity-95 transition-all"
         >
-          Keep Practicing
+          {t('keepPracticingBtn')}
           <ArrowRight size={16} />
         </button>
       </div>

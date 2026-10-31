@@ -45,7 +45,7 @@ export default function HomePage() {
               className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-[#C0392B] to-[#F5A623] text-white rounded-2xl font-bold text-sm hover:opacity-95 transition-all shadow-md"
             >
               <Sparkles size={16} />
-              Real-World Quests & Levels 🎮
+              {t('homeMissionsHeroBtn')}
             </Link>
             <Link
               to="/learn"
@@ -81,17 +81,17 @@ export default function HomePage() {
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-xs font-bold px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 border border-amber-400/30 uppercase tracking-wider flex items-center gap-1.5">
                     <Sparkles size={13} className="text-amber-400" />
-                    New: Gamified Real-World Levels
+                    {t('homeMissionsBadge')}
                   </span>
                   <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-green-500/20 text-green-300 border border-green-500/30">
-                    Levels 1 - 5
+                    {t('homeLevelsRange')}
                   </span>
                 </div>
                 <h2 className="text-2xl sm:text-3xl font-black">
-                  Practice Real Scenarios & Gain True Confidence
+                  {t('homeMissionsTitle')}
                 </h2>
                 <p className="text-xs sm:text-sm text-neutral-300 mt-1 max-w-2xl leading-relaxed">
-                  Step into local Karnataka situations. Speak with vegetable shopkeepers, negotiate auto rides, ask college classmates for notes, and order crisp dosas.
+                  {t('homeMissionsSub')}
                 </p>
               </div>
 
@@ -99,7 +99,7 @@ export default function HomePage() {
                 to="/missions"
                 className="inline-flex items-center gap-2 px-6 py-3.5 bg-gradient-to-r from-[#C0392B] to-[#F5A623] text-white rounded-2xl font-bold text-sm hover:opacity-95 transition-all shadow-md self-start sm:self-auto flex-shrink-0"
               >
-                <span>Enter Missions & Levels</span>
+                <span>{t('homeEnterMissions')}</span>
                 <ArrowRight size={16} />
               </Link>
             </div>
@@ -112,13 +112,13 @@ export default function HomePage() {
               >
                 <div className="text-3xl mb-2.5">🥕</div>
                 <div className="text-xs font-bold text-amber-300 uppercase tracking-wide">
-                  Level 1 • Market
+                  {t('realmLevelPrefix')} 1 • Market
                 </div>
                 <div className="font-bold text-sm text-white mt-0.5 group-hover:text-amber-200 transition-colors">
-                  Ask Price & Buy Veggies
+                  {t('homeMarketTag')}
                 </div>
                 <p className="text-[11px] text-neutral-400 mt-1">
-                  "ಅಣ್ಣಾ, ಇದು ಎಷ್ಟು ರೂಪಾಯಿ?" — Ask prices, bargain politely, and pay with QR code.
+                  {t('homeMarketDesc')}
                 </p>
               </Link>
 
@@ -128,13 +128,13 @@ export default function HomePage() {
               >
                 <div className="text-3xl mb-2.5">🎓</div>
                 <div className="text-xs font-bold text-blue-300 uppercase tracking-wide">
-                  Level 2 • College
+                  {t('realmLevelPrefix')} 2 • College
                 </div>
                 <div className="font-bold text-sm text-white mt-0.5 group-hover:text-blue-200 transition-colors">
-                  Classmates & Campus
+                  {t('homeCollegeTag')}
                 </div>
                 <p className="text-[11px] text-neutral-400 mt-1">
-                  "ಇವತ್ತಿನ ನೋಟ್ಸ್ ಕೊಡ್ತೀರಾ?" — Borrow lecture notes, find the library, and order canteen snacks.
+                  {t('homeCollegeDesc')}
                 </p>
               </Link>
 
@@ -144,13 +144,13 @@ export default function HomePage() {
               >
                 <div className="text-3xl mb-2.5">🛺</div>
                 <div className="text-xs font-bold text-yellow-300 uppercase tracking-wide">
-                  Level 2 • Transit
+                  {t('realmLevelPrefix')} 2 • Transit
                 </div>
                 <div className="font-bold text-sm text-white mt-0.5 group-hover:text-yellow-200 transition-colors">
-                  Auto-Rickshaw Rides
+                  {t('homeTransitTag')}
                 </div>
                 <p className="text-[11px] text-neutral-400 mt-1">
-                  "ಮೀಟರ್ ಹಾಕಿ ಸಾರ್" — Ask drivers to come to your area, use the meter, and guide turns.
+                  {t('homeTransitDesc')}
                 </p>
               </Link>
 
@@ -160,13 +160,13 @@ export default function HomePage() {
               >
                 <div className="text-3xl mb-2.5">☕</div>
                 <div className="text-xs font-bold text-rose-300 uppercase tracking-wide">
-                  Level 1 • Darshini
+                  {t('realmLevelPrefix')} 1 • Darshini
                 </div>
                 <div className="font-bold text-sm text-white mt-0.5 group-hover:text-rose-200 transition-colors">
-                  Filter Coffee & Food
+                  {t('homeCafeTag')}
                 </div>
                 <p className="text-[11px] text-neutral-400 mt-1">
-                  "ಸಕ್ಕರೆ ಕಡಿಮೆ ಕಾಫಿ ಕೊಡಿ" — Order authentic South Indian coffee, hot dosas, and parcel.
+                  {t('homeCafeDesc')}
                 </p>
               </Link>
             </div>

@@ -147,4 +147,104 @@ export interface UIStrings {
   // Footer
   footerTagline: string;
   madeWithLove: string;
+
+  // Gamification & Home Showcase
+  homeMissionsHeroBtn: string;
+  homeMissionsBadge: string;
+  homeLevelsRange: string;
+  homeMissionsTitle: string;
+  homeMissionsSub: string;
+  homeEnterMissions: string;
+  homeMarketTag: string;
+  homeMarketDesc: string;
+  homeCollegeTag: string;
+  homeCollegeDesc: string;
+  homeTransitTag: string;
+  homeTransitDesc: string;
+  homeCafeTag: string;
+  homeCafeDesc: string;
+
+  // Missions & Realms Dashboard
+  missionsArenaBadge: string;
+  missionsStreakSuffix: string;
+  missionsPlayerStatus: string;
+  missionsTotalXp: string;
+  missionsXpToLevel: string;
+  missionsMaxLevel: string;
+  missionsConfidenceLabel: string;
+  missionsConfidenceSub: string;
+  missionsMissionsLabel: string;
+  missionsMissionsSub: string;
+  missionsBadgesLabel: string;
+  missionsBadgesSub: string;
+  missionsVoiceLabel: string;
+  missionsVoiceSub: string;
+  gameWorldMapTitle: string;
+  gameWorldMapHeading: string;
+  gameWorldMapSub: string;
+  gameWorldMapHint: string;
+  realmLevelPrefix: string;
+  realmLevelSuffix: string;
+  realmConfidenceSuffix: string;
+  realmQuestsSuffix: string;
+  realmMasteredBadge: string;
+  realmDoneSuffix: string;
+  realmEnterBtn: string;
+  realmUnlockAtLevel: string;
+  trophyRoomHeading: string;
+  trophyRoomSub: string;
+  unlockedOf: string;
+  unlockedWord: string;
+  lockedWord: string;
+  backToWorldMap: string;
+  hearGreetingBtn: string;
+  questsClearedLabel: string;
+  spokenConfidenceLabel: string;
+  realmMissionsHeading: string;
+  realmMissionsSub: string;
+  missionsAvailable: string;
+  missionGoalPrefix: string;
+  missionClearedBadge: string;
+  startMissionBtn: string;
+  practiceAgain: string;
+
+  // Task Modal & Speaking
+  yourSpeakingMission: string;
+  sayThisInKannada: string;
+  showPronunciationBtn: string;
+  hidePronunciationBtn: string;
+  meaningLabel: string;
+  listenNormalBtn: string;
+  listenSlowBtn: string;
+  vocabBreakdownLabel: string;
+  culturalTipLabel: string;
+  practiceAndSpeak: string;
+  completedBadge: string;
+  speakMicBtn: string;
+  listeningMicBtn: string;
+  iSpokeOutLoudBtn: string;
+  micListeningPrompt: string;
+  youSaidLabel: string;
+  repliesLabel: string;
+  listenToReplyBtn: string;
+  translationLabel: string;
+  bonusChoicesLabel: string;
+  missionAccomplished: string;
+  confidenceBoostedIn: string;
+  nextMissionBtn: string;
+
+  // Modals & Practice Banner
+  levelUpAchieved: string;
+  unlockedPerksLabel: string;
+  keepPracticingBtn: string;
+  badgeUnlockedHeading: string;
+  awesomeBtn: string;
+  practiceGamifiedBannerTitle: string;
+  practiceGamifiedBannerSub: string;
+  practiceGamifiedBannerBtn: string;
+  practiceGamifiedBadge: string;
+  comingSoonDesc: string;
+  textToText: string;
+  voiceToText: string;
+  textToVoice: string;
 }

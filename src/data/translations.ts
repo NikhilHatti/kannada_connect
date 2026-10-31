@@ -1,6 +1,6 @@
 import type { UIStrings, SupportedLang } from '../types';
 
-export const UI_STRINGS: Record<SupportedLang, UIStrings> = {
+export const UI_STRINGS: Record<SupportedLang, Partial<UIStrings>> = {
   en: {
     // Brand & Nav
     learnKannada: 'Learn Kannada.',
@@ -100,16 +100,16 @@ export const UI_STRINGS: Record<SupportedLang, UIStrings> = {
 
     // About Page
     aboutTitle: 'About KannadaConnect',
-    aboutP1: 'KannadaConnect is an AI-powered Kannada communication assistant built for people who move to Karnataka but don\'t speak the local language. Whether you\'re a student, professional, or traveller, this app helps you communicate confidently in everyday situations.',
+    aboutP1: 'KannadaConnect is an AI-powered Kannada learning companion built for people who move to Karnataka. Whether you\'re a student fresh to Bengaluru, a professional relocated for work, or a traveller exploring Karnataka — this app helps you communicate naturally in everyday Kannada.',
     ourMission: 'Our Mission',
-    ourMissionDesc: 'To bridge the language gap for Karnataka\'s growing diverse population — making it easier to navigate daily life while respecting and appreciating the beautiful Kannada language and culture.',
+    ourMissionDesc: 'To bridge the language gap for Karnataka\'s growing diverse population — making it easy and enjoyable to navigate daily life while genuinely appreciating the beautiful Kannada language and culture.',
     whatWeOffer: 'What We Offer',
-    offerItem1: 'Curated Kannada phrases for real-life situations (Travel, Food, Health, etc.)',
-    offerItem2: 'Text-to-speech pronunciation for all phrases and translations',
-    offerItem3: 'Transliteration in Roman script for easy reading',
-    offerItem4: 'Full multi-language support (English, Hindi, Tamil, Telugu, Malayalam, Marathi, Bengali)',
-    offerItem5: 'Interactive AI conversation practice scenarios',
-    thankYouNote: '🙏 ಧನ್ಯವಾದ (Dhanyavāda) — Thank you for using KannadaConnect.',
+    offerItem1: 'Curated Kannada phrases for real-life situations (Travel, Food, Health, Workplace)',
+    offerItem2: 'Natural voice pronunciation with native Kannada accent for every phrase',
+    offerItem3: 'Roman transliteration so you can read and say phrases without knowing the script',
+    offerItem4: 'Full UI in 7 Indian languages: English, Hindi, Tamil, Telugu, Malayalam, Marathi, Bengali',
+    offerItem5: 'Gamified Missions with XP, levels, badges and interactive AI conversation practice',
+    thankYouNote: 'Thank you for using KannadaConnect. We hope it helps you feel at home in Karnataka.',
 
     // Footer
     footerTagline: 'Learn Kannada. Speak confidently. Connect with Karnataka.',

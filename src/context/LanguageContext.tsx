@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import type { Language, UIStrings, SupportedLang } from '../types';
 import { LANGUAGES } from '../data';
 import { UI_STRINGS } from '../data/translations';
+import { ADDITIONAL_UI_STRINGS } from '../data/gamificationTranslations';
 
 interface LanguageContextValue {
   selectedLanguage: Language;
@@ -37,7 +38,13 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   function t(key: keyof UIStrings): string {
     const code = selectedLanguage.code as SupportedLang;
-    return UI_STRINGS[code]?.[key] ?? UI_STRINGS['en']?.[key] ?? (key as string);
+    return (
+      ADDITIONAL_UI_STRINGS[code]?.[key] ??
+      UI_STRINGS[code]?.[key] ??
+      ADDITIONAL_UI_STRINGS['en']?.[key] ??
+      UI_STRINGS['en']?.[key] ??
+      (key as string)
+    );
   }
 
   return (

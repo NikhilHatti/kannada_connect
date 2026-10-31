@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Award, X } from 'lucide-react';
 import type { AchievementBadge } from '../../types/gamification';
 import { soundEffects } from '../../utils/soundEffects';
+import { useLanguage } from '../../context/LanguageContext';
 
 interface BadgeModalProps {
   badge: AchievementBadge;
@@ -9,6 +10,8 @@ interface BadgeModalProps {
 }
 
 export default function BadgeModal({ badge, onClose }: BadgeModalProps) {
+  const { t } = useLanguage();
+
   useEffect(() => {
     soundEffects.playXp();
   }, [badge]);
@@ -36,7 +39,7 @@ export default function BadgeModal({ badge, onClose }: BadgeModalProps) {
         <div>
           <div className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-full uppercase tracking-wider mb-1 border border-amber-200">
             <Award size={12} />
-            Badge Unlocked!
+            {t('badgeUnlockedHeading')}
           </div>
           <h3 className="text-xl font-bold text-[#1A1A1A]">{badge.name}</h3>
           <div className="text-sm font-semibold text-[#C0392B] kannada-text">
@@ -49,7 +52,7 @@ export default function BadgeModal({ badge, onClose }: BadgeModalProps) {
           onClick={onClose}
           className="w-full py-2.5 px-4 rounded-xl bg-[#1A1A1A] text-white font-bold text-xs hover:bg-neutral-800 transition-colors"
         >
-          Awesome!
+          {t('awesomeBtn')}
         </button>
       </div>
     </div>

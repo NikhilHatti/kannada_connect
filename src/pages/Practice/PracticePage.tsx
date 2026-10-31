@@ -4,6 +4,7 @@ import { ArrowLeft, Volume2, RotateCcw, ChevronRight, MessageCircle, Sparkles } 
 import { useLanguage } from '../../context/LanguageContext';
 import type { UIStrings } from '../../types';
 import { speakKannada } from '../../utils/speech';
+import { getLocalizedDialogue } from '../../data/practiceDialogueTranslations';
 
 /* ─── Conversation Data ─── */
 
@@ -314,7 +315,7 @@ const SCENARIO_TRANSLATIONS: Record<
 };
 
 export default function PracticePage() {
-  const { t } = useLanguage();
+  const { t, currentLang } = useLanguage();
   const [selectedScenario, setSelectedScenario] = useState<Scenario | null>(null);
   const [currentStepId, setCurrentStepId] = useState<string>('');
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
@@ -405,20 +406,20 @@ export default function PracticePage() {
           <div className="space-y-1">
             <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/20 text-white font-bold text-xs uppercase tracking-wider">
               <Sparkles size={12} />
-              Gamification & Levels Active
+              {t('practiceGamifiedBadge')}
             </div>
             <h2 className="text-lg sm:text-xl font-black">
-              Real-World Quests: Market, College & Auto
+              {t('practiceGamifiedBannerTitle')}
             </h2>
             <p className="text-xs text-white/90">
-              Ask shopkeepers prices, borrow college notes, take autos, and earn XP to level up!
+              {t('practiceGamifiedBannerSub')}
             </p>
           </div>
           <Link
             to="/missions"
             className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-white text-neutral-900 font-bold text-xs sm:text-sm rounded-xl hover:bg-neutral-100 transition-colors shadow-xs flex-shrink-0"
           >
-            Play Missions 🎮
+            {t('practiceGamifiedBannerBtn')}
             <ChevronRight size={15} />
           </Link>
         </div>
@@ -524,9 +525,9 @@ export default function PracticePage() {
                       <Volume2 size={14} />
                     </button>
                   </div>
-                  {/* English translation */}
+                  {/* Translation */}
                   <p className={`text-xs mt-1.5 leading-relaxed ${msg.speaker === 'user' ? 'text-white/60' : 'text-[#9A9A9A]'}`}>
-                    {msg.english}
+                    {getLocalizedDialogue(msg.english, currentLang)}
                   </p>
                 </div>
               </div>
@@ -569,7 +570,9 @@ export default function PracticePage() {
                     <p className="text-sm font-semibold text-[#1A1A1A] kannada-text group-hover:text-[#C0392B] transition-colors">
                       {opt.kannada}
                     </p>
-                    <p className="text-xs text-[#9A9A9A] mt-0.5">{opt.english}</p>
+                    <p className="text-xs text-[#9A9A9A] mt-0.5">
+                      {getLocalizedDialogue(opt.english, currentLang)}
+                    </p>
                   </button>
                 ))}
               </div>

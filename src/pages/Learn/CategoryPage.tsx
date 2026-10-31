@@ -81,7 +81,7 @@ export default function CategoryPage() {
         <div className="text-center py-16">
           <div className="text-5xl mb-4">🚧</div>
           <h3 className="font-semibold text-[#1A1A1A] mb-2">{t('comingSoon')}</h3>
-          <p className="text-sm text-[#9A9A9A]">We&apos;re working on this section. Check back soon!</p>
+          <p className="text-sm text-[#9A9A9A]">{t('comingSoonDesc')}</p>
         </div>
       )}
     </div>

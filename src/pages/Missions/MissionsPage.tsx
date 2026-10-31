@@ -22,9 +22,14 @@ import LevelUpModal from '../../components/Missions/LevelUpModal';
 import BadgeModal from '../../components/Missions/BadgeModal';
 import { soundEffects } from '../../utils/soundEffects';
 import { speakKannada } from '../../utils/speech';
+import {
+  getLocalizedScenario,
+  getLocalizedTask,
+  getLocalizedLevel,
+} from '../../data/gamificationTranslations';
 
 export default function MissionsPage() {
-  const { t } = useLanguage();
+  const { t, currentLang } = useLanguage();
   const {
     progress,
     currentLevel,
@@ -50,6 +55,12 @@ export default function MissionsPage() {
 
   const selectedScenario = selectedScenarioId
     ? SCENARIO_QUESTS.find((s) => s.id === selectedScenarioId) ?? null
+    : null;
+
+  const localizedCurrentLevel = getLocalizedLevel(currentLevel, currentLang);
+  const localizedNextLevel = nextLevel ? getLocalizedLevel(nextLevel, currentLang) : null;
+  const localizedSelectedScenario = selectedScenario
+    ? getLocalizedScenario(selectedScenario, currentLang)
     : null;
 
   function handleSelectScenario(scenarioId: ScenarioTheme) {
@@ -90,13 +101,13 @@ export default function MissionsPage() {
           onClick={handleBackToMap}
           className={`${selectedScenario ? 'hover:text-[#1A1A1A] underline cursor-pointer' : 'text-[#1A1A1A] font-medium'}`}
         >
-          Game Realms
+          {t('gameWorldMapTitle')}
         </button>
-        {selectedScenario && (
+        {localizedSelectedScenario && (
           <>
             <span>/</span>
             <span className="text-[#1A1A1A] font-bold">
-              {selectedScenario.title.split('&')[0]}
+              {localizedSelectedScenario.title.split('&')[0]}
             </span>
           </>
         )}
@@ -113,11 +124,11 @@ export default function MissionsPage() {
             <div className="flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400/20 text-amber-300 font-bold text-xs uppercase tracking-wider border border-amber-400/30">
                 <Sparkles size={13} className="text-amber-400" />
-                Karnataka Quest Arena
+                {t('missionsArenaBadge')}
               </span>
               <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-red-500/20 text-red-300 font-bold text-xs border border-red-500/30">
                 <Flame size={13} className="text-red-400" />
-                {progress.streakDays}-Day Streak
+                {progress.streakDays} {t('missionsStreakSuffix')}
               </span>
             </div>
 
@@ -128,10 +139,10 @@ export default function MissionsPage() {
                 </span>
                 <div>
                   <div className="text-xs font-semibold text-neutral-400 uppercase tracking-widest">
-                    Level {currentLevel.level} • Player Status
+                    {t('realmLevelPrefix')} {currentLevel.level} • {t('missionsPlayerStatus')}
                   </div>
                   <h1 className="text-2xl sm:text-3xl font-black text-white">
-                    {currentLevel.title}
+                    {localizedCurrentLevel.title}
                   </h1>
                   <p className="text-sm font-semibold text-[#F5A623] kannada-text">
                     {currentLevel.kannadaTitle}
@@ -139,7 +150,7 @@ export default function MissionsPage() {
                 </div>
               </div>
               <p className="text-xs sm:text-sm text-neutral-300 mt-2 max-w-xl leading-relaxed">
-                {currentLevel.description}
+                {localizedCurrentLevel.description}
               </p>
             </div>
 
@@ -147,12 +158,12 @@ export default function MissionsPage() {
             <div className="space-y-1.5 pt-1">
               <div className="flex justify-between text-xs font-semibold">
                 <span className="text-amber-300 flex items-center gap-1">
-                  ⭐ {progress.xp} Total XP
+                  ⭐ {progress.xp} {t('missionsTotalXp')}
                 </span>
                 <span className="text-neutral-400">
                   {nextLevel
-                    ? `${nextLevel.minXp - progress.xp} XP to Level ${nextLevel.level} (${nextLevel.title})`
-                    : 'Maximum Level Attained! 👑'}
+                    ? `${nextLevel.minXp - progress.xp} ${t('missionsXpToLevel')} ${nextLevel.level} (${localizedNextLevel?.title})`
+                    : t('missionsMaxLevel')}
                 </span>
               </div>
               <div className="w-full h-3.5 bg-neutral-800/90 rounded-full overflow-hidden p-0.5 border border-neutral-700">
@@ -168,53 +179,53 @@ export default function MissionsPage() {
           <div className="lg:col-span-5 grid grid-cols-2 gap-3">
             <div className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-sm">
               <div className="flex items-center justify-between text-neutral-400 mb-2">
-                <span className="text-xs font-semibold uppercase tracking-wider">Confidence</span>
+                <span className="text-xs font-semibold uppercase tracking-wider">{t('missionsConfidenceLabel')}</span>
                 <Compass size={16} className="text-emerald-400" />
               </div>
               <div className="text-2xl font-black text-white">
                 {overallConfidence}%
               </div>
               <div className="text-[11px] text-neutral-400 mt-0.5">
-                Overall Karnataka readiness
+                {t('missionsConfidenceSub')}
               </div>
             </div>
 
             <div className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-sm">
               <div className="flex items-center justify-between text-neutral-400 mb-2">
-                <span className="text-xs font-semibold uppercase tracking-wider">Missions</span>
+                <span className="text-xs font-semibold uppercase tracking-wider">{t('missionsMissionsLabel')}</span>
                 <CheckCircle2 size={16} className="text-amber-400" />
               </div>
               <div className="text-2xl font-black text-white">
                 {progress.completedTaskIds.length} / 20
               </div>
               <div className="text-[11px] text-neutral-400 mt-0.5">
-                Total quests cleared
+                {t('missionsMissionsSub')}
               </div>
             </div>
 
             <div className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-sm">
               <div className="flex items-center justify-between text-neutral-400 mb-2">
-                <span className="text-xs font-semibold uppercase tracking-wider">Badges</span>
+                <span className="text-xs font-semibold uppercase tracking-wider">{t('missionsBadgesLabel')}</span>
                 <Trophy size={16} className="text-yellow-400" />
               </div>
               <div className="text-2xl font-black text-white">
                 {progress.earnedBadgeIds.length} / {ACHIEVEMENT_BADGES.length}
               </div>
               <div className="text-[11px] text-neutral-400 mt-0.5">
-                Achievements unlocked
+                {t('missionsBadgesSub')}
               </div>
             </div>
 
             <div className="bg-white/5 border border-white/10 rounded-2xl p-4 backdrop-blur-sm">
               <div className="flex items-center justify-between text-neutral-400 mb-2">
-                <span className="text-xs font-semibold uppercase tracking-wider">Voice Mic</span>
+                <span className="text-xs font-semibold uppercase tracking-wider">{t('missionsVoiceLabel')}</span>
                 <Sparkles size={16} className="text-purple-400" />
               </div>
               <div className="text-2xl font-black text-white">
                 {progress.voiceAttemptsCount}
               </div>
               <div className="text-[11px] text-neutral-400 mt-0.5">
-                Pronunciation runs
+                {t('missionsVoiceSub')}
               </div>
             </div>
           </div>
@@ -230,18 +241,18 @@ export default function MissionsPage() {
             <div>
               <div className="inline-flex items-center gap-1.5 text-xs font-bold text-[#C0392B] uppercase tracking-wider mb-1">
                 <Sparkles size={13} />
-                Game World Map
+                {t('gameWorldMapTitle')}
               </div>
               <h2 className="text-2xl sm:text-3xl font-black text-[#1A1A1A]">
-                Select a Realm to Enter
+                {t('gameWorldMapHeading')}
               </h2>
               <p className="text-xs sm:text-sm text-[#7A7A7A] mt-0.5">
-                Choose a situation to view its missions, converse with local characters, and earn XP.
+                {t('gameWorldMapSub')}
               </p>
             </div>
 
             <div className="flex items-center gap-2 text-xs font-semibold text-[#5A5A5A] bg-white border border-[#E8E4DC] px-3.5 py-2 rounded-xl shadow-2xs self-start">
-              <span>🎮 Tap any realm to see its missions</span>
+              <span>{t('gameWorldMapHint')}</span>
             </div>
           </div>
 
@@ -252,6 +263,7 @@ export default function MissionsPage() {
               const { completed, total, percentage, confidence } =
                 getScenarioProgress(scenario.id);
               const isAllDone = completed === total && total > 0;
+              const locScenario = getLocalizedScenario(scenario, currentLang);
 
               return (
                 <div
@@ -284,11 +296,11 @@ export default function MissionsPage() {
                           }`}
                         >
                           {!isUnlocked && <Lock size={10} />}
-                          Level {scenario.requiredLevel} Realm
+                          {t('realmLevelPrefix')} {scenario.requiredLevel} {t('realmLevelSuffix')}
                         </span>
 
                         <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-700 border border-neutral-200">
-                          {confidence}% Confidence
+                          {confidence}% {t('realmConfidenceSuffix')}
                         </span>
                       </div>
                     </div>
@@ -296,7 +308,7 @@ export default function MissionsPage() {
                     {/* Realm Title */}
                     <div className="space-y-1 mb-3">
                       <h3 className="text-xl font-bold text-[#1A1A1A] group-hover:text-[#C0392B] transition-colors leading-snug">
-                        {scenario.title}
+                        {locScenario.title}
                       </h3>
                       <div className="text-xs font-semibold text-[#F5A623] kannada-text">
                         {scenario.kannadaTitle}
@@ -304,7 +316,7 @@ export default function MissionsPage() {
                     </div>
 
                     <p className="text-xs text-[#5A5A5A] line-clamp-2 leading-relaxed mb-4">
-                      {scenario.description}
+                      {locScenario.description}
                     </p>
                   </div>
 
@@ -319,17 +331,17 @@ export default function MissionsPage() {
                             {scenario.npc.name.split(' ')[0]}
                           </div>
                           <div className="text-[10px] text-[#7A7A7A] mt-0.5">
-                            {scenario.npc.role.split(' ')[0]}
+                            {locScenario.npcRole.split(' ')[0]}
                           </div>
                         </div>
                       </div>
 
                       <div className="text-right">
                         <span className="font-bold text-xs text-[#1A1A1A]">
-                          {completed}/{total} Quests
+                          {completed}/{total} {t('realmQuestsSuffix')}
                         </span>
                         <div className="text-[10px] text-emerald-600 font-semibold">
-                          {isAllDone ? 'Mastered 🏆' : `${percentage}% Done`}
+                          {isAllDone ? t('realmMasteredBadge') : `${percentage}% ${t('realmDoneSuffix')}`}
                         </div>
                       </div>
                     </div>
@@ -353,13 +365,13 @@ export default function MissionsPage() {
                     >
                       {isUnlocked ? (
                         <>
-                          <span>Enter Realm & Missions</span>
+                          <span>{t('realmEnterBtn')}</span>
                           <ChevronRight size={15} />
                         </>
                       ) : (
                         <>
                           <Lock size={13} />
-                          <span>Unlocks at Level {scenario.requiredLevel}</span>
+                          <span>{t('realmUnlockAtLevel')} {scenario.requiredLevel}</span>
                         </>
                       )}
                     </button>
@@ -376,15 +388,15 @@ export default function MissionsPage() {
                 <div className="flex items-center gap-2">
                   <Trophy size={20} className="text-[#F5A623]" />
                   <h3 className="text-xl font-bold text-[#1A1A1A]">
-                    Trophy Room & Badges
+                    {t('trophyRoomHeading')}
                   </h3>
                 </div>
                 <p className="text-xs text-[#7A7A7A] mt-0.5">
-                  Unlock cultural Karnataka trophies as you conquer missions and speak Kannada!
+                  {t('trophyRoomSub')}
                 </p>
               </div>
               <div className="text-xs font-bold text-amber-800 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full self-start">
-                {progress.earnedBadgeIds.length} of {ACHIEVEMENT_BADGES.length} Unlocked
+                {progress.earnedBadgeIds.length} {t('unlockedOf')} {ACHIEVEMENT_BADGES.length} {t('unlockedWord')}
               </div>
             </div>
 
@@ -426,7 +438,7 @@ export default function MissionsPage() {
                             : 'bg-neutral-200 text-neutral-600'
                         }`}
                       >
-                        {isUnlocked ? 'Unlocked 🌟' : 'Locked 🔒'}
+                        {isUnlocked ? `${t('unlockedWord')} 🌟` : `${t('lockedWord')} 🔒`}
                       </span>
                     </div>
                   </div>
@@ -449,7 +461,7 @@ export default function MissionsPage() {
               className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white border border-[#E8E4DC] text-xs sm:text-sm font-bold text-[#1A1A1A] hover:bg-[#FAF8F4] transition-colors shadow-xs"
             >
               <ArrowLeft size={16} />
-              Back to Game World Map
+              {t('backToWorldMap')}
             </button>
 
             {/* Quick Switcher for Realms */}
@@ -465,7 +477,7 @@ export default function MissionsPage() {
                   }`}
                 >
                   <span>{s.icon}</span>
-                  <span>{s.title.split('&')[0]}</span>
+                  <span>{getLocalizedScenario(s, currentLang).title.split('&')[0]}</span>
                 </button>
               ))}
             </div>
@@ -483,20 +495,20 @@ export default function MissionsPage() {
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-white/25 uppercase tracking-wider">
-                      Level {selectedScenario.requiredLevel} Realm
+                      {t('realmLevelPrefix')} {selectedScenario.requiredLevel} {t('realmLevelSuffix')}
                     </span>
                     <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-black/25">
-                      📍 {selectedScenario.locationName}
+                      📍 {localizedSelectedScenario?.locationName}
                     </span>
                   </div>
                   <h2 className="text-2xl sm:text-3xl font-black">
-                    {selectedScenario.title}
+                    {localizedSelectedScenario?.title}
                   </h2>
                   <div className="text-sm font-semibold text-amber-200 kannada-text mt-0.5">
                     {selectedScenario.kannadaTitle}
                   </div>
                   <p className="text-xs sm:text-sm text-white/90 mt-2 max-w-xl leading-relaxed">
-                    {selectedScenario.description}
+                    {localizedSelectedScenario?.description}
                   </p>
                 </div>
               </div>
@@ -508,13 +520,13 @@ export default function MissionsPage() {
                     <span className="text-2xl">{selectedScenario.npc.avatarEmoji}</span>
                     <div>
                       <div className="font-bold text-xs">{selectedScenario.npc.name}</div>
-                      <div className="text-[10px] text-white/80">{selectedScenario.npc.role}</div>
+                      <div className="text-[10px] text-white/80">{localizedSelectedScenario?.npcRole}</div>
                     </div>
                   </div>
                   <button
-                    onClick={() => speakKannada(selectedScenario.npc.greetingKannada, 0.85)}
+                    onClick={() => speakKannada(selectedScenario.npc.greetingKannada, { transliteration: selectedScenario.npc.greetingTransliteration })}
                     className="p-1.5 rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors"
-                    title="Listen to NPC greeting"
+                    title={t('hearGreetingBtn')}
                   >
                     <Volume2 size={15} />
                   </button>
@@ -524,7 +536,7 @@ export default function MissionsPage() {
                   "{selectedScenario.npc.greetingKannada}"
                 </div>
                 <div className="text-[11px] text-white/80">
-                  "{selectedScenario.npc.greetingEnglish}"
+                  "{localizedSelectedScenario?.greetingText}"
                 </div>
               </div>
             </div>
@@ -532,14 +544,14 @@ export default function MissionsPage() {
             {/* Realm Progress Bar in Banner */}
             <div className="mt-6 pt-4 border-t border-white/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs font-bold">
               <div>
-                Quests Cleared:{' '}
+                {t('questsClearedLabel')}{' '}
                 <span className="text-amber-200">
                   {getScenarioProgress(selectedScenario.id).completed} of{' '}
                   {selectedScenario.tasks.length}
                 </span>
               </div>
               <div className="flex items-center gap-2">
-                <span>Spoken Confidence in Realm:</span>
+                <span>{t('spokenConfidenceLabel')}:</span>
                 <span className="px-2.5 py-0.5 bg-white/25 rounded-full">
                   {getScenarioProgress(selectedScenario.id).confidence}%
                 </span>
@@ -552,21 +564,22 @@ export default function MissionsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-xl font-bold text-[#1A1A1A]">
-                  Realm Missions & Dialogue Stages
+                  {t('realmMissionsHeading')}
                 </h3>
                 <p className="text-xs text-[#7A7A7A]">
-                  Click on any mission to practice speaking with {selectedScenario.npc.name.split(' ')[0]} and earn XP.
+                  {t('realmMissionsSub')}
                 </p>
               </div>
 
               <span className="text-xs font-bold text-[#C0392B] bg-red-50 border border-red-200 px-3 py-1 rounded-full">
-                {selectedScenario.tasks.length} Missions Available
+                {selectedScenario.tasks.length} {t('missionsAvailable')}
               </span>
             </div>
 
             <div className="grid grid-cols-1 gap-3.5">
               {selectedScenario.tasks.map((task, idx) => {
                 const done = isTaskCompleted(task.id);
+                const locTask = getLocalizedTask(task, currentLang);
                 return (
                   <div
                     key={task.id}
@@ -592,7 +605,7 @@ export default function MissionsPage() {
                       <div className="space-y-1">
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="font-bold text-base text-[#1A1A1A] group-hover:text-[#C0392B] transition-colors">
-                            {task.title}
+                            {locTask.title}
                           </span>
                           <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-200 flex items-center gap-1">
                             <Sparkles size={11} className="text-amber-700" />
@@ -623,7 +636,7 @@ export default function MissionsPage() {
                         </div>
 
                         <p className="text-xs text-[#7A7A7A]">
-                          Goal: {task.objective}
+                          {t('missionGoalPrefix')}: {locTask.objective}
                         </p>
                       </div>
                     </div>
@@ -634,7 +647,7 @@ export default function MissionsPage() {
                         <div className="flex items-center gap-2">
                           <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full flex items-center gap-1">
                             <CheckCircle2 size={13} />
-                            Cleared
+                            {t('missionClearedBadge')}
                           </span>
                           <button
                             onClick={(e) => {
@@ -642,7 +655,7 @@ export default function MissionsPage() {
                               handleOpenTask(task, selectedScenario);
                             }}
                             className="p-2 rounded-xl text-xs font-semibold text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 transition-colors"
-                            title="Practice again"
+                            title={t('practiceAgain')}
                           >
                             <RotateCcw size={15} />
                           </button>
@@ -653,7 +666,7 @@ export default function MissionsPage() {
                           className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#C0392B] text-white text-xs sm:text-sm font-bold hover:bg-[#a93226] transition-all shadow-xs"
                         >
                           <Play size={13} fill="currentColor" />
-                          <span>Start Mission</span>
+                          <span>{t('startMissionBtn')}</span>
                         </button>
                       )}
                     </div>

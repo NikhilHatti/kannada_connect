@@ -1,23 +1,98 @@
 // High-Definition Speech Synthesis and Recognition for KannadaConnect
 
-// Global cache for preloaded and fetched audio elements
-const audioCache = new Map<string, string>();
 let currentAudio: HTMLAudioElement | null = null;
+// Keepalive timer reference — prevents Chrome's ~15s TTS cutoff bug
+let ttsKeepAlive: ReturnType<typeof setInterval> | null = null;
+
+/**
+ * Clears the Chrome TTS keepalive timer.
+ */
+function clearKeepAlive() {
+  if (ttsKeepAlive !== null) {
+    clearInterval(ttsKeepAlive);
+    ttsKeepAlive = null;
+  }
+}
+
+/**
+ * Chrome silently kills SpeechSynthesis utterances after ~15 seconds.
+ * Calling pause()+resume() every 10 s tricks Chrome into keeping it alive
+ * for the full duration of the sentence/paragraph.
+ */
+function startKeepAlive(synth: SpeechSynthesis) {
+  clearKeepAlive();
+  ttsKeepAlive = setInterval(() => {
+    if (synth.speaking && !synth.paused) {
+      synth.pause();
+      synth.resume();
+    } else if (!synth.speaking) {
+      clearKeepAlive();
+    }
+  }, 10_000);
+}
+
+/**
+ * Build a SpeechSynthesisUtterance wired up with keepalive + callbacks.
+ * All priority paths share this so behaviour is identical everywhere.
+ */
+function makeUtterance(
+  text: string,
+  rate: number,
+  synth: SpeechSynthesis,
+  onStart?: () => void,
+  onEnd?: () => void
+): SpeechSynthesisUtterance {
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.rate   = rate;
+  utt.pitch  = 1.0;
+  utt.volume = 1.0;
+  utt.onstart = () => {
+    startKeepAlive(synth);
+    onStart?.();
+  };
+  utt.onend = () => {
+    clearKeepAlive();
+    onEnd?.();
+  };
+  utt.onerror = () => {
+    clearKeepAlive();
+    onEnd?.();
+  };
+  return utt;
+}
 
 /**
  * Maps Kannada Unicode characters to Devanagari Unicode.
- * Devanagari and Kannada share identical phonetic alphabetic ordering.
- * Used as an offline high-accuracy fallback for Indian neural engines like Google Hindi.
+ *
+ * Kannada and Devanagari share the same phonetic alphabet ordering so a
+ * simple code-point offset (0x0C80 → 0x0900) works for most characters.
+ *
+ * However, Kannada has four "short" vowel code-points that exist in Unicode
+ * but are NOT part of standard Hindi — the Hindi TTS engine stops as soon as
+ * it encounters them.  We remap them to the closest long-vowel equivalents
+ * that Hindi TTS handles correctly:
+ *
+ *   ಎ  0x0C8E  short-e        → ए  0x090F  (Hindi long-e)
+ *   ಒ  0x0C92  short-o        → ओ  0x0913  (Hindi long-o)
+ *   ೆ  0x0CC6  short-e matra  → े  0x0947  (Hindi long-e matra)
+ *   ೊ  0x0CCA  short-o matra  → ो  0x094B  (Hindi long-o matra)
  */
 export function kannadaToDevanagari(text: string): string {
+  // Post-conversion corrections: Devanagari code-point → safe Hindi equivalent
+  const corrections: Record<number, number> = {
+    0x090E: 0x090F, // ऎ short-e        → ए long-e
+    0x0912: 0x0913, // ऒ short-o        → ओ long-o
+    0x0946: 0x0947, // ॆ short-e matra  → े long-e matra
+    0x094A: 0x094B, // ॊ short-o matra  → ो long-o matra
+  };
+
   let result = '';
   for (let i = 0; i < text.length; i++) {
     const code = text.charCodeAt(i);
     // Kannada unicode range: 0x0C80 - 0x0CFF
     if (code >= 0x0c80 && code <= 0x0cff) {
-      // Map to Devanagari (0x0900 - 0x097F)
-      const offset = code - 0x0c80;
-      result += String.fromCharCode(0x0900 + offset);
+      const mapped = 0x0900 + (code - 0x0c80);
+      result += String.fromCharCode(corrections[mapped] ?? mapped);
     } else {
       result += text[i];
     }
@@ -36,6 +111,7 @@ export interface SpeakOptions {
 
 /** Stop any currently playing audio or speech utterance */
 export function stopAudio(): void {
+  clearKeepAlive();
   if (currentAudio) {
     try {
       currentAudio.pause();
@@ -55,10 +131,109 @@ export function stopAudio(): void {
 }
 
 /**
- * Crystal-Clear Kannada Voice Engine
- * 1. Primary: Plays studio-grade native Kannada audio from high-fidelity TTS stream (/api/tts).
- * 2. Secondary (Offline Fallback): Intelligent browser SpeechSynthesis using native Kannada voice,
- *    or phonetic Devanagari mapping via Google Hindi / Indian English voices.
+ * Split text into short chunks at natural break points so Chrome's TTS
+ * engine never receives a block long enough to trigger its silent cutoff.
+ * Each chunk is spoken sequentially via the onend → next chain.
+ */
+function splitIntoChunks(text: string): string[] {
+  // Split at sentence-ending punctuation, commas, and Kannada dandas (।)
+  const raw = text
+    .split(/(?<=[.!?।,])\s+/)
+    .flatMap((seg) => {
+      // If a segment is still long (>120 chars), split further at spaces
+      if (seg.length > 120) {
+        const words = seg.split(' ');
+        const sub: string[] = [];
+        let cur = '';
+        for (const w of words) {
+          if ((cur + ' ' + w).trim().length > 100) {
+            if (cur) sub.push(cur.trim());
+            cur = w;
+          } else {
+            cur = cur ? cur + ' ' + w : w;
+          }
+        }
+        if (cur) sub.push(cur.trim());
+        return sub;
+      }
+      return [seg];
+    })
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+
+  return raw.length > 0 ? raw : [text.trim()];
+}
+
+/**
+ * Speak a queue of chunks sequentially.
+ * Chrome's cancel()+speak() timing bug is avoided by deferring each speak()
+ * by one macrotask (setTimeout 0) so the browser's TTS pipeline fully settles
+ * between cancel and the next enqueue.
+ */
+function speakChunks(
+  chunks: string[],
+  voice: SpeechSynthesisVoice | null,
+  lang: string,
+  rate: number,
+  synth: SpeechSynthesis,
+  onStart?: () => void,
+  onEnd?: () => void
+): void {
+  let index = 0;
+
+  const speakNext = () => {
+    if (index >= chunks.length) {
+      clearKeepAlive();
+      onEnd?.();
+      return;
+    }
+
+    const chunk = chunks[index++];
+    const utt = new SpeechSynthesisUtterance(chunk);
+    if (voice) utt.voice = voice;
+    utt.lang   = lang;
+    utt.rate   = rate;
+    utt.pitch  = 1.0;
+    utt.volume = 1.0;
+
+    if (index === 1) {
+      // Fire onStart only for the very first chunk
+      utt.onstart = () => {
+        startKeepAlive(synth);
+        onStart?.();
+      };
+    } else {
+      utt.onstart = () => startKeepAlive(synth);
+    }
+
+    utt.onend   = () => { clearKeepAlive(); setTimeout(speakNext, 50); };
+    utt.onerror = () => { clearKeepAlive(); setTimeout(speakNext, 50); };
+
+    // Defer the speak() call so Chrome's cancel() pipeline fully settles first
+    setTimeout(() => synth.speak(utt), 0);
+  };
+
+  speakNext();
+}
+
+/**
+ * Crystal-Clear Kannada Voice Engine (Enhanced)
+ *
+ * Priority chain — same engine used everywhere in the app:
+ * 1. Native browser kn-IN voice        — true Kannada accent, best quality
+ * 2. Google Hindi (hi-IN) voice with Devanagari transliteration
+ *    — Kannada & Devanagari share the same phonetic alphabet ordering,
+ *      so a Hindi neural voice produces the closest Indian accent when
+ *      a native Kannada voice is unavailable
+ * 3. Indian English (en-IN) voice with Roman transliteration
+ * 4. Any available voice with Roman transliteration
+ *
+ * Fixes applied:
+ *  - Chunked sequential speaking → sentences are always fully spoken
+ *  - setTimeout(0) defer after cancel() → Chrome timing bug eliminated
+ *  - onvoiceschanged guard → voices always loaded before selection
+ *  - Keepalive timer → Chrome 15s background cutoff prevented
+ *  - volume = 1.0 everywhere for maximum clarity
  */
 export function speakKannada(
   text: string,
@@ -73,55 +248,23 @@ export function speakKannada(
 
   stopAudio();
 
-  const isSlow = options.slow || (options.rate !== undefined && options.rate < 0.75);
-  const cacheKey = `${text}_${isSlow ? 'slow' : 'normal'}`;
-  const apiUrl = `/api/tts?text=${encodeURIComponent(text)}${isSlow ? '&slow=true' : ''}`;
+  const isSlow    = options.slow || (options.rate !== undefined && options.rate < 0.75);
+  const normalRate = 0.85;
+  const slowRate   = 0.65;
 
-  // 1. Try High-Definition Stream via HTML5 Audio
-  const playNativeAudio = () => {
-    try {
-      const audioUrl = audioCache.get(cacheKey) || apiUrl;
-      const audio = new Audio(audioUrl);
-      currentAudio = audio;
+  if (!('speechSynthesis' in window)) {
+    options.onEnd?.();
+    return;
+  }
 
-      audio.onplay = () => {
-        options.onStart?.();
-      };
+  const synth = window.speechSynthesis;
+  // Cancel any ongoing speech — we defer the actual speak() so this settles first
+  synth.cancel();
 
-      audio.onended = () => {
-        if (currentAudio === audio) currentAudio = null;
-        options.onEnd?.();
-      };
-
-      audio.onerror = () => {
-        // Fallback to client synthesis if audio stream is blocked
-        fallbackToSpeechSynthesis();
-      };
-
-      const playPromise = audio.play();
-      if (playPromise !== undefined) {
-        playPromise.catch(() => {
-          fallbackToSpeechSynthesis();
-        });
-      }
-    } catch {
-      fallbackToSpeechSynthesis();
-    }
-  };
-
-  // 2. Intelligent Browser SpeechSynthesis Fallback
-  const fallbackToSpeechSynthesis = () => {
-    if (!('speechSynthesis' in window)) {
-      options.onEnd?.();
-      return;
-    }
-
-    const synth = window.speechSynthesis;
-    synth.cancel();
-
+  const doSpeak = () => {
     const voices = synth.getVoices();
 
-    // Priority 1: True native Kannada voice
+    /* ── Priority 1: Native Kannada voice ── */
     const kannadaVoice =
       voices.find((v) => v.lang === 'kn-IN') ??
       voices.find((v) => v.lang.startsWith('kn')) ??
@@ -129,60 +272,59 @@ export function speakKannada(
       null;
 
     if (kannadaVoice) {
-      const utt = new SpeechSynthesisUtterance(text);
-      utt.voice = kannadaVoice;
-      utt.lang = 'kn-IN';
-      utt.rate = isSlow ? 0.65 : (options.rate ?? 0.85);
-      utt.pitch = 1.0;
-      utt.onstart = () => options.onStart?.();
-      utt.onend = () => options.onEnd?.();
-      utt.onerror = () => options.onEnd?.();
-      synth.speak(utt);
+      speakChunks(
+        splitIntoChunks(text),
+        kannadaVoice, 'kn-IN',
+        isSlow ? slowRate : (options.rate ?? normalRate),
+        synth, options.onStart, options.onEnd
+      );
       return;
     }
 
-    // Priority 2: Indian neural Hindi voice (with 1-to-1 Devanagari transliteration for authentic pronunciation)
-    const indianVoice =
+    /* ── Priority 2: Hindi neural voice with Devanagari mapping ── */
+    const hindiVoice =
       voices.find((v) => v.name.toLowerCase().includes('google') && v.lang.startsWith('hi')) ??
       voices.find((v) => v.lang === 'hi-IN') ??
       voices.find((v) => v.lang.startsWith('hi')) ??
-      voices.find((v) => v.lang === 'en-IN') ??
       null;
 
-    if (indianVoice && indianVoice.lang.startsWith('hi')) {
+    if (hindiVoice) {
       const devanagariText = kannadaToDevanagari(text);
-      const utt = new SpeechSynthesisUtterance(devanagariText);
-      utt.voice = indianVoice;
-      utt.lang = 'hi-IN';
-      utt.rate = isSlow ? 0.65 : 0.82;
-      utt.pitch = 1.0;
-      utt.onstart = () => options.onStart?.();
-      utt.onend = () => options.onEnd?.();
-      utt.onerror = () => options.onEnd?.();
-      synth.speak(utt);
+      speakChunks(
+        splitIntoChunks(devanagariText),
+        hindiVoice, 'hi-IN',
+        isSlow ? slowRate : 0.82,
+        synth, options.onStart, options.onEnd
+      );
       return;
     }
 
-    // Priority 3: Indian English voice with Roman transliteration
+    /* ── Priority 3: Indian English with Roman transliteration ── */
     const indianEnglishVoice =
+      voices.find((v) => v.name.toLowerCase().includes('google') && v.lang === 'en-IN') ??
       voices.find((v) => v.lang === 'en-IN') ??
       voices.find((v) => v.name.toLowerCase().includes('india')) ??
       null;
 
     const speechText = options.transliteration || text;
-    const utt = new SpeechSynthesisUtterance(speechText);
-    if (indianEnglishVoice) {
-      utt.voice = indianEnglishVoice;
-      utt.lang = 'en-IN';
-    }
-    utt.rate = isSlow ? 0.65 : 0.85;
-    utt.onstart = () => options.onStart?.();
-    utt.onend = () => options.onEnd?.();
-    utt.onerror = () => options.onEnd?.();
-    synth.speak(utt);
+    speakChunks(
+      splitIntoChunks(speechText),
+      indianEnglishVoice, indianEnglishVoice?.lang ?? 'en-IN',
+      isSlow ? slowRate : normalRate,
+      synth, options.onStart, options.onEnd
+    );
   };
 
-  playNativeAudio();
+  // Voices may not be populated on the very first call — wait for them
+  if (synth.getVoices().length > 0) {
+    // Small defer so synth.cancel() fully settles before we enqueue
+    setTimeout(doSpeak, 50);
+  } else {
+    synth.onvoiceschanged = () => {
+      synth.onvoiceschanged = null;
+      setTimeout(doSpeak, 50);
+    };
+  }
 }
 
 // Global declaration for SpeechRecognition in browsers

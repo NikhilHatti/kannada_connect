@@ -15,6 +15,7 @@ import {
 import type { QuestTask, ScenarioQuest } from '../../types/gamification';
 import { useLanguage } from '../../context/LanguageContext';
 import { useGamification } from '../../context/GamificationContext';
+import { getLocalizedTask, getLocalizedScenario } from '../../data/gamificationTranslations';
 import {
   speakKannada,
   stopAudio,
@@ -37,8 +38,11 @@ export default function TaskModal({
   onClose,
   onNextTask,
 }: TaskModalProps) {
-  const { currentLang } = useLanguage();
+  const { currentLang, t } = useLanguage();
   const { completeTask, recordVoiceAttempt, isTaskCompleted } = useGamification();
+
+  const localizedScenario = getLocalizedScenario(scenario, currentLang);
+  const localizedTask = getLocalizedTask(task, currentLang);
 
   const [showTransliteration, setShowTransliteration] = useState(true);
   const [isListening, setIsListening] = useState(false);
@@ -186,7 +190,9 @@ export default function TaskModal({
 
     // Speak NPC response
     setTimeout(() => {
-      speakKannada(task.npcResponse.kannada, 0.85);
+      speakKannada(task.npcResponse.kannada, {
+        transliteration: task.npcResponse.transliteration,
+      });
     }, 600);
   }
 
@@ -197,9 +203,9 @@ export default function TaskModal({
     const option = task.followUpOptions[idx];
 
     // Speak user's choice then NPC's reply
-    speakKannada(option.kannada, 0.85);
+    speakKannada(option.kannada, { transliteration: option.transliteration });
     setTimeout(() => {
-      speakKannada(option.npcReply.kannada, 0.85);
+      speakKannada(option.npcReply.kannada, { transliteration: option.npcReply.transliteration });
       soundEffects.playXp();
     }, 1400);
   }
@@ -231,14 +237,14 @@ export default function TaskModal({
             <div>
               <div className="flex items-center gap-2">
                 <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-white/25 uppercase tracking-wide">
-                  {scenario.title.split('&')[0]}
+                  {localizedScenario.title.split('&')[0]}
                 </span>
                 <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-400 text-amber-950">
                   {task.difficulty}
                 </span>
               </div>
               <h3 className="font-bold text-base sm:text-lg leading-tight mt-0.5">
-                {task.title}
+                {localizedTask.title}
               </h3>
             </div>
           </div>
@@ -268,27 +274,27 @@ export default function TaskModal({
               </div>
               <div>
                 <div className="text-xs font-semibold text-[#C0392B] uppercase tracking-wider">
-                  {scenario.locationName}
+                  {localizedScenario.locationName}
                 </div>
                 <div className="font-bold text-[#1A1A1A] text-sm sm:text-base">
-                  {scenario.npc.name} • {scenario.npc.role}
+                  {scenario.npc.name} • {localizedScenario.npcRole}
                 </div>
               </div>
             </div>
 
             <div className="sm:ml-auto flex items-center gap-2 bg-white px-3 py-2 rounded-xl border border-[#E8E4DC] text-xs text-[#5A5A5A] shadow-xs">
               <Lightbulb size={14} className="text-[#F5A623] flex-shrink-0" />
-              <span>{task.situation}</span>
+              <span>{localizedTask.situation}</span>
             </div>
           </div>
 
           {/* Mission Objective Callout */}
           <div className="border-l-4 border-[#C0392B] bg-red-50/70 p-3.5 rounded-r-xl">
             <div className="text-xs font-bold text-[#C0392B] uppercase tracking-wide">
-              🎯 Your Speaking Mission
+              🎯 {t('yourSpeakingMission')}
             </div>
             <p className="text-sm font-semibold text-[#1A1A1A] mt-0.5">
-              {task.objective}
+              {localizedTask.objective}
             </p>
           </div>
 
@@ -297,7 +303,7 @@ export default function TaskModal({
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-amber-800 uppercase tracking-wider flex items-center gap-1.5">
                 <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse" />
-                Say this in Kannada
+                {t('sayThisInKannada')}
               </span>
 
               <button
@@ -305,7 +311,7 @@ export default function TaskModal({
                 className="text-xs font-medium text-amber-800 hover:text-amber-950 flex items-center gap-1 bg-white/80 px-2.5 py-1 rounded-full border border-amber-200/60 shadow-2xs transition-colors"
               >
                 <Languages size={13} />
-                {showTransliteration ? 'Hide Transliteration' : 'Show Pronunciation'}
+                {showTransliteration ? t('hidePronunciationBtn') : t('showPronunciationBtn')}
               </button>
             </div>
 
@@ -322,7 +328,7 @@ export default function TaskModal({
               )}
 
               <div className="inline-block mt-2.5 px-3 py-1 rounded-xl bg-white border border-amber-200/80 text-xs sm:text-sm font-medium text-[#4A4A4A] shadow-xs">
-                Meaning: <span className="font-semibold text-[#1A1A1A]">{localizedMeaning}</span>
+                {t('meaningLabel')}: <span className="font-semibold text-[#1A1A1A]">{localizedMeaning}</span>
               </div>
             </div>
 
@@ -337,7 +343,7 @@ export default function TaskModal({
                 }`}
               >
                 <Volume2 size={16} />
-                Listen (Normal)
+                {t('listenNormalBtn')}
               </button>
 
               <button
@@ -350,7 +356,7 @@ export default function TaskModal({
                 title="Slower pace for easy pronunciation practice"
               >
                 <Volume2 size={16} />
-                Listen Slow (🐢 0.6x)
+                {t('listenSlowBtn')}
               </button>
             </div>
 
@@ -358,7 +364,7 @@ export default function TaskModal({
             {task.breakdown && task.breakdown.length > 0 && (
               <div className="pt-3 border-t border-amber-200/60">
                 <div className="text-[11px] font-bold text-[#8A7A6A] uppercase tracking-wider mb-2">
-                  Vocabulary Breakdown:
+                  {t('vocabBreakdownLabel')}
                 </div>
                 <div className="flex flex-wrap gap-1.5 justify-center">
                   {task.breakdown.map((item, idx) => (
@@ -381,8 +387,8 @@ export default function TaskModal({
             <div className="flex items-start gap-3 bg-amber-50/70 border border-amber-200/70 rounded-2xl p-3.5 text-xs text-amber-950">
               <Lightbulb size={18} className="text-[#F5A623] flex-shrink-0 mt-0.5" />
               <div>
-                <span className="font-bold">Karnataka Local Tip: </span>
-                <span>{task.culturalTip}</span>
+                <span className="font-bold">{t('culturalTipLabel')} </span>
+                <span>{localizedTask.culturalTip}</span>
               </div>
             </div>
           )}
@@ -391,11 +397,11 @@ export default function TaskModal({
           <div className="border border-[#E8E4DC] rounded-2xl p-5 bg-[#FAF8F4]/80 space-y-4">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-[#5A5A5A] uppercase tracking-wider">
-                Practice & Speak Aloud
+                {t('practiceAndSpeak')}
               </span>
               {hasCompleted && (
                 <span className="inline-flex items-center gap-1 text-xs font-bold text-green-700 bg-green-100 px-2.5 py-0.5 rounded-full">
-                  <CheckCircle2 size={13} /> Completed
+                  <CheckCircle2 size={13} /> {t('completedBadge')}
                 </span>
               )}
             </div>
@@ -413,12 +419,12 @@ export default function TaskModal({
                 {isListening ? (
                   <>
                     <MicOff size={18} />
-                    Listening... (Tap to stop)
+                    {t('listeningMicBtn')}
                   </>
                 ) : (
                   <>
                     <Mic size={18} className="text-[#F5A623]" />
-                    🎙️ Speak Kannada Phrase (+10 XP)
+                    {t('speakMicBtn')}
                   </>
                 )}
               </button>
@@ -429,14 +435,14 @@ export default function TaskModal({
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-3.5 rounded-2xl font-semibold text-sm bg-white text-[#1A1A1A] border border-[#E8E4DC] hover:bg-[#FAF8F4] transition-colors shadow-xs"
               >
                 <CheckCircle2 size={16} className="text-green-600" />
-                I Spoke It Out Loud!
+                {t('iSpokeOutLoudBtn')}
               </button>
             </div>
 
             {/* Live Transcript / Speech Feedback */}
             {speechTranscript && (
               <div className="p-3 bg-white rounded-xl border border-[#E8E4DC] text-xs">
-                <span className="font-bold text-[#9A9A9A]">You said: </span>
+                <span className="font-bold text-[#9A9A9A]">{t('youSaidLabel')}: </span>
                 <span className="font-semibold text-[#1A1A1A]">"{speechTranscript}"</span>
               </div>
             )}
@@ -466,7 +472,7 @@ export default function TaskModal({
                 <div className="flex items-center gap-2">
                   <span className="text-xl">{scenario.npc.avatarEmoji}</span>
                   <span className="text-xs font-bold text-green-900 uppercase tracking-wide">
-                    {scenario.npc.name} Replies:
+                    {scenario.npc.name} {t('repliesLabel')}
                   </span>
                 </div>
                 <button
@@ -474,7 +480,7 @@ export default function TaskModal({
                   className="inline-flex items-center gap-1.5 px-3 py-1 bg-white border border-green-200 rounded-full text-xs font-semibold text-green-800 hover:bg-green-100 transition-colors shadow-2xs"
                 >
                   <Volume2 size={13} />
-                  Listen to Reply
+                  {t('listenToReplyBtn')}
                 </button>
               </div>
 
@@ -486,7 +492,7 @@ export default function TaskModal({
                   "{task.npcResponse.transliteration}"
                 </div>
                 <div className="text-xs font-medium text-[#4A4A4A] mt-1.5 pt-1.5 border-t border-neutral-100">
-                  Translation: <span className="font-semibold">{task.npcResponse.english}</span>
+                  {t('translationLabel')}: <span className="font-semibold">{task.npcResponse.english}</span>
                 </div>
               </div>
 
@@ -494,7 +500,7 @@ export default function TaskModal({
               {task.followUpOptions && task.followUpOptions.length > 0 && (
                 <div className="pt-2 space-y-2">
                   <div className="text-xs font-bold text-[#5A5A5A] uppercase tracking-wider">
-                    Bonus Conversational Choices:
+                    {t('bonusChoicesLabel')}:
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {task.followUpOptions.map((opt, idx) => (
@@ -545,13 +551,13 @@ export default function TaskModal({
                 </div>
                 <div>
                   <div className="font-bold text-sm text-amber-950 flex items-center gap-1.5">
-                    <span>Mission Accomplished! 🎉</span>
+                    <span>{t('missionAccomplished')}</span>
                     <span className="text-xs font-black text-amber-900 bg-amber-200 px-2 py-0.5 rounded-full">
                       +{earnedXp ?? task.xpReward} XP
                     </span>
                   </div>
                   <div className="text-xs text-amber-800">
-                    Confidence boosted in {scenario.title.split('&')[0]}!
+                    {t('confidenceBoostedIn')} {localizedScenario.title.split('&')[0]}!
                   </div>
                 </div>
               </div>
@@ -567,7 +573,7 @@ export default function TaskModal({
                   className="px-3 py-2 rounded-xl text-xs font-semibold border border-amber-300 text-amber-900 bg-white hover:bg-amber-100 transition-colors flex items-center gap-1"
                 >
                   <RotateCcw size={13} />
-                  Practice Again
+                  {t('practiceAgain')}
                 </button>
 
                 {nextTask && onNextTask && (
@@ -578,7 +584,7 @@ export default function TaskModal({
                     }}
                     className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-[#C0392B] text-white text-xs sm:text-sm font-bold hover:bg-[#a93226] transition-colors shadow-xs"
                   >
-                    Next Mission
+                    {t('nextMissionBtn')}
                     <ChevronRight size={16} />
                   </button>
                 )}
